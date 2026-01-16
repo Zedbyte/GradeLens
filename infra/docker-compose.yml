@@ -1,4 +1,30 @@
 services:
+
+  # Node API
+  api:
+    build:
+      context: ../application/api
+    container_name: gradelens-api
+    depends_on:
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      MONGO_URL: mongodb://mongo:27017/gradelens
+      REDIS_URL: redis://redis:6379/0
+      SCAN_STORAGE_DIR: /data/scans
+    command: npm run dev
+    volumes:
+      - ../application/api:/app
+      - ../storage/scans:/data/scans
+      - /app/node_modules
+
+  # Redis
   redis:
     image: redis:7
     container_name: gradelens-redis
@@ -10,6 +36,7 @@ services:
       timeout: 3s
       retries: 5
 
+  # Python CV Worker and API
   cv-worker:
     build:
       context: ../compute/cv
@@ -37,3 +64,16 @@ services:
     environment:
       REDIS_URL: redis://redis:6379/0
       DEBUG: "true"
+
+  # MongoDB
+  mongo:
+      image: mongo:7
+      container_name: gradelens-mongo
+      ports:
+        - "27017:27017"
+      volumes:
+        - mongo_data:/data/db
+      restart: unless-stopped
+
+volumes:
+  mongo_data:
