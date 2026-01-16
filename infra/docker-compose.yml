@@ -1,0 +1,39 @@
+services:
+  redis:
+    image: redis:7
+    container_name: gradelens-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  cv-worker:
+    build:
+      context: ../compute/cv
+    container_name: gradelens-cv-worker
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: python -m app.workers.scan_worker
+    volumes:
+      - ../storage/scans:/data/scans
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      IMAGE_ROOT: /data/scans
+      DEBUG: "true"
+
+  cv-api:
+    build:
+      context: ../compute/cv
+    container_name: gradelens-cv-api
+    depends_on:
+      - redis
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DEBUG: "true"
