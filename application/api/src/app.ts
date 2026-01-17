@@ -1,12 +1,12 @@
 import express from "express";
-import scansRouter from "./routes/scans.ts";
+import routes from "./routes/index.ts";
 import healthRouter from "./routes/health.ts";
 import { errorMiddleware } from "./middlewares/error.middleware.ts";
 import cors from "cors";
 
-const allowedOrigins = [
-  "http://localhost:5173"
-];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173")
+  .split(",")
+  .map(origin => origin.trim());
 
 export function createApp() {
   const app = express();
@@ -24,8 +24,13 @@ export function createApp() {
 
   app.use(express.json());
 
-  app.use("/health", healthRouter);
-  app.use("/api", scansRouter);
+  // Debug: log all requests
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+  });
+
+  app.use("/api", routes);
 
   app.use(errorMiddleware);
 
