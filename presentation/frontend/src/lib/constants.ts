@@ -1,6 +1,7 @@
 export const ROUTES = {
   LOGIN: "/login",
   DASHBOARD: "/",
+  SCAN: "/scans",
 } as const;
 
 export const QUERY_KEYS = {

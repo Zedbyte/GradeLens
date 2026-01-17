@@ -3,7 +3,9 @@ import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import { ProtectedRoute } from "./guards/ProtectedRoute";
 import { PublicRoute } from "./guards/PublicRoute";
+import { AppLayout } from "@/layouts/AppLayout";
 import { ROUTES } from "@/lib/constants";
+import { ScanPage } from "@/pages/ScanPage";
 
 export function AppRouter() {
     return (
@@ -22,7 +24,20 @@ export function AppRouter() {
             path={ROUTES.DASHBOARD}
             element={
                 <ProtectedRoute>
-                <DashboardPage />
+                <AppLayout>
+                    <DashboardPage />
+                </AppLayout>
+                </ProtectedRoute>
+            }
+            />
+
+            <Route
+            path={ROUTES.SCAN}
+            element={
+                <ProtectedRoute>
+                <AppLayout>
+                    <ScanPage />
+                </AppLayout>
                 </ProtectedRoute>
             }
             />

@@ -4,7 +4,7 @@ import { UploadForm } from "../features/scans/components/UploadForm"
 import { ScanList } from "../features/scans/components/ScanList"
 import { ScanDetail } from "../features/scans/components/ScanDetail"
 
-export function Home() {
+export function ScanPage() {
     const [scans, setScans] = useState<any[]>([])
     const [selected, setSelected] = useState<any>(null)
 
