@@ -117,21 +117,29 @@ export async function refreshService(
 ): Promise<
   AuthResult & { newRefreshToken: string }
 > {
+  console.log("Refresh token received (first 16 chars):", refreshToken.substring(0, 16));
+  
   const tokenHash = hashToken(refreshToken);
+  console.log("Token hash (first 16 chars):", tokenHash.substring(0, 16));
 
   const user = await UserModel.findOne({
     "refreshTokens.tokenHash": tokenHash,
   });
 
   if (!user) {
+    console.log("No user found with this token hash");
     throw new Error("Invalid refresh token");
   }
+
+  console.log("User found:", user.email);
+  console.log("User's refresh tokens count:", user.refreshTokens.length);
 
   const storedToken = user.refreshTokens.find(
     (t: any) => t.tokenHash === tokenHash
   );
 
   if (!storedToken || storedToken.expiresAt < new Date()) {
+    console.log("Token expired or not found in user's tokens");
     throw new Error("Refresh token expired");
   }
 

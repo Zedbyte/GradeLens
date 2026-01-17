@@ -5,6 +5,7 @@ import {
   logoutService,
   meService,
 } from "../services/auth.service.ts";
+import { API_ROUTES } from "../constants/routes.ts";
 
 /**
  * POST /auth/login
@@ -22,7 +23,7 @@ export const login = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api/auth/refresh",
+      path: API_ROUTES.BASE.API,
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     });
 
@@ -43,11 +44,17 @@ export const login = async (req: Request, res: Response) => {
  */
 export const refresh = async (req: Request, res: Response) => {
   try {
+    console.log("Refresh attempt - cookies:", req.cookies);
+    console.log("Refresh attempt - headers:", req.headers.cookie);
+    
     const refreshToken = req.cookies?.refresh_token;
 
     if (!refreshToken) {
+      console.log("No refresh token found in cookies");
       return res.status(401).json({ message: "Unauthorized. Token Not Found." });
     }
+
+    console.log("Refresh token found, attempting refresh");
 
     const { user, accessToken, newRefreshToken } =
       await refreshService(refreshToken);
@@ -56,15 +63,18 @@ export const refresh = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api/auth/refresh",
+      path: API_ROUTES.BASE.API,
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
+
+    console.log("Refresh successful");
 
     return res.status(200).json({
       user,
       accessToken,
     });
-  } catch {
+  } catch (error) {
+    console.error("Refresh error:", error);
     return res.status(401).json({ message: "Unauthorized. Refresh Failed" });
   }
 };
@@ -81,7 +91,7 @@ export const logout = async (req: Request, res: Response) => {
     }
 
     res.clearCookie("refresh_token", {
-      path: "/api/auth/refresh",
+      path: API_ROUTES.BASE.API,
     });
 
     return res.status(204).send();
