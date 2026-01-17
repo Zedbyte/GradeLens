@@ -96,6 +96,24 @@ docker compose down -v
 ```bash
 docker exec -it gradelens-mongo mongosh
 ```
+- Seed Collections
+```bash
+npx tsx src/scripts/seed-admin.ts
+```
+
+### Frequent Errors
+- Docker sometimes cache the build, especially when installing new packages.
+- Ensure that you installed the package in the correct directory (including if it is installed in dependencies and not devDependencies).
+```bash
+docker compose down -v
+docker compose build api --no-cache
+docker compose up
+```
+- Now check
+```bash
+docker exec -it gradelens-api sh
+ls node_modules/cors
+```
 
 ---
 
