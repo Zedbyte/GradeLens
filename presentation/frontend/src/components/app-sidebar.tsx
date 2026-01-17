@@ -4,16 +4,18 @@ import * as React from "react"
 import {
   IconDashboard,
   IconCamera,
-  IconDatabase,
   IconHelp,
   IconInnerShadowTop,
-  IconReport,
   IconSearch,
   IconSettings,
+  IconWallpaper,
+  IconFileAnalytics,
+  IconUser,
+  IconCategoryPlus,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main.tsx"
-import { NavDocuments } from "@/components/nav-documents.tsx"
+// import { NavDocuments } from "@/components/nav-documents.tsx"
 import { NavSecondary } from "@/components/nav-secondary.tsx"
 import { NavUser } from "@/components/nav-user.tsx"
 import { useAuth } from "@/features/auth/hooks/useAuth"
@@ -35,9 +37,29 @@ const navMain = [
     icon: IconDashboard,
   },
   {
-    title: "Scans",
+    title: "Scans", //Page to scan/upload student answer sheets
     url: ROUTES.SCAN,
     icon: IconCamera,
+  },
+  {
+    title: "Quizzes", //Page where we can create quizzes and assign them to classes, and answer keys
+    url: '#',
+    icon: IconWallpaper,
+  },
+  {
+    title: "Report (Summary)", //This includes per student summary, mean-pl etc.
+    url: '#',
+    icon: IconFileAnalytics,
+  },
+  {
+    title: "Accounts", //Create accounts, and students.
+    url: '#',
+    icon: IconUser,
+  },
+  {
+    title: "Classes", //Create classes and assign students to classes
+    url: '#',
+    icon: IconCategoryPlus,
   },
 ]
 
@@ -59,18 +81,18 @@ const navSecondary = [
   },
 ]
 
-const documents = [
-  {
-    name: "Data Library",
-    url: "#",
-    icon: IconDatabase,
-  },
-  {
-    name: "Reports",
-    url: "#",
-    icon: IconReport,
-  },
-]
+// const documents = [
+//   {
+//     name: "Data Library",
+//     url: "#",
+//     icon: IconDatabase,
+//   },
+//   {
+//     name: "Reports",
+//     url: "#",
+//     icon: IconReport,
+//   },
+// ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
@@ -94,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
-        <NavDocuments items={documents} />
+        {/* <NavDocuments items={documents} /> */}
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
