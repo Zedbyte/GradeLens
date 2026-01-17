@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { uploadScan } from "../api/scans"
+import { uploadScanApi } from "../api/scans.api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,7 @@ export function UploadForm({ onUploaded }: { onUploaded: () => void }) {
     const reader = new FileReader()
     reader.onload = async () => {
       const base64 = (reader.result as string).split(",")[1]
-      await uploadScan(base64)
+      await uploadScanApi({ image: base64 })
       setLoading(false)
       onUploaded()
     }
