@@ -1,12 +1,13 @@
-# GradeLens – Compute Layer
+# GradeLens - OMR
 
-This document describes the **only supported ways** to run the GradeLens
-**compute layer (CV pipeline)**.
+This document describes the **only supported ways** to run GradeLens.
 
-The compute layer consists of:
-- Redis (job queue)
-- CV Worker (image processing consumer)
+The system consists of:
+- Redis (Job Queue)
+- CV Worker (Image Processing Consumer)
 - CV API (FastAPI, health/debug)
+- Node API (Ingress, Application Logic)
+- Mongo DB (Persistence)
 
 There are **two modes**:
 1. Docker (standard, recommended)
@@ -35,6 +36,8 @@ All services run in containers, with correct filesystem isolation.
 - Redis
 - CV Worker
 - CV API
+- Node API
+- Mongo DB
 
 ### One command to run everything
 ```bash
@@ -63,7 +66,9 @@ npm run dev
 
 
 ### Push a test job (manual)
-- docker exec -it gradelens-redis redis-cli
+```bash 
+docker exec -it gradelens-redis redis-cli
+```
 ```bash
 LPUSH scan_jobs "{
   \"scan_id\": \"test_001\",
@@ -73,16 +78,24 @@ LPUSH scan_jobs "{
 ```
 
 ### View logs
-- docker logs -f gradelens-cv-worker
+```bash
+docker logs -f gradelens-cv-worker
+```
 
 ### Stop Everything
-- docker compose down
+```bash
+docker compose down
+```
 
 ### Stop and Delete
-- docker compose down -v 
+```bash
+docker compose down -v
+```
 
 ### Use MongoDB
-- docker exec -it gradelens-mongo mongosh
+```bash
+docker exec -it gradelens-mongo mongosh
+```
 
 ---
 
@@ -104,14 +117,19 @@ pip install -r requirements.txt
 ```
 
 ### Start Redis (Docker)
-- docker run -d --name redis -p 6379:6379 redis:7
+```bash
+docker run -d --name redis -p 6379:6379 redis:7
+```
 
 ### Run CV Worker (Local)
-- python -m app.workers.scan_worker
+```bash
+python -m app.workers.scan_worker
+```
 
 ⚠️ In local mode, image paths are resolved relative to the project.
 Docker-style paths (/data/scans) do not apply.
 
 ### Run CV API (Local)
-- uvicorn main:app --reload
-
+```bash
+uvicorn main:app --reload
+```
