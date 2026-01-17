@@ -1,6 +1,6 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import routes from "./routes/index.ts";
-import healthRouter from "./routes/health.ts";
 import { errorMiddleware } from "./middlewares/error.middleware.ts";
 import cors from "cors";
 
@@ -23,6 +23,7 @@ export function createApp() {
   }));
 
   app.use(express.json());
+  app.use(cookieParser()); // Add this line
 
   // Debug: log all requests
   app.use((req, res, next) => {
