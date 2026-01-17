@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react"
-import { fetchScans, fetchScan } from "../api/scans"
-import { UploadForm } from "../components/UploadForm"
-import { ScanList } from "../components/ScanList"
-import { ScanDetail } from "../components/ScanDetail"
+import { fetchScansApi, fetchScanApi } from "../features/scans/api/scans.api"
+import { UploadForm } from "../features/scans/components/UploadForm"
+import { ScanList } from "../features/scans/components/ScanList"
+import { ScanDetail } from "../features/scans/components/ScanDetail"
 
 export function Home() {
     const [scans, setScans] = useState<any[]>([])
     const [selected, setSelected] = useState<any>(null)
 
     async function loadScans() {
-        setScans(await fetchScans())
+        setScans(await fetchScansApi())
     }
 
     async function selectScan(id: string) {
-        setSelected(await fetchScan(id))
+        setSelected(await fetchScanApi(id))
     }
 
     useEffect(() => {
