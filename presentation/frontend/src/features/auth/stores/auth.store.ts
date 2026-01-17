@@ -8,17 +8,19 @@ type AuthState = {
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrating: boolean; // Add this flag
 
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   hydrate: () => Promise<void>;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
   isLoading: true,
+  isHydrating: false, // Add this
 
   async login(email, password) {
     const res = await loginApi({ email, password });
@@ -26,6 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: res.user,
       accessToken: res.accessToken,
       isAuthenticated: true,
+      isLoading: false, // Set to false after login
     });
   },
 
@@ -39,6 +42,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   async hydrate() {
+    // Prevent multiple simultaneous hydrate calls
+    if (get().isHydrating) {
+      return;
+    }
+
+    set({ isHydrating: true });
+
     try {
       const res = await refreshApi();
       set({
@@ -49,7 +59,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       set({ isAuthenticated: false });
     } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, isHydrating: false });
     }
   },
 }));

@@ -1,5 +1,15 @@
+import { useEffect } from "react";
 import { AppRouter } from "./router";
+import { useAuthStore } from "@/features/auth";
 
-export default function App() {
+function App() {
+  const hydrate = useAuthStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
   return <AppRouter />;
 }
+
+export default App;
