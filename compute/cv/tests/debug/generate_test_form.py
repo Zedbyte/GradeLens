@@ -15,7 +15,7 @@ Example:
 
     /
 
-    python -m tests.debug.generate_test_form --template form_A --output tests/fixtures/images --conditions perfect --random-answers --seed 42 --save-answer-key tests/fixtures/answers_form_A.json
+    python -m tests.debug.generate_test_form --template form_A --output tests/fixtures/images --conditions perfect --random-answers --seed 42 --save-answer-key tests/fixtures/answer_keys/answers_form_A.json
 
     /
 
