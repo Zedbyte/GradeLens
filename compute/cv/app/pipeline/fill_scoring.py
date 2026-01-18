@@ -59,17 +59,31 @@ def calculate_fill_ratio(
     
     # Threshold to binary
     if use_adaptive:
-        # Adaptive threshold works better with varying lighting
-        binary = cv2.adaptiveThreshold(
-            masked,
-            255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV,
-            11,
-            2
-        )
-        binary = cv2.bitwise_and(binary, binary, mask=mask)
-        dark_pixels = np.sum(binary > 0)
+        # Try Otsu's method first for bright images
+        mean_brightness = np.mean(masked[mask > 0])
+        
+        if mean_brightness > 200:  # Very bright image
+            # Use Otsu's method which automatically finds optimal threshold
+            _, binary = cv2.threshold(
+                masked,
+                0,
+                255,
+                cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+            )
+            binary = cv2.bitwise_and(binary, binary, mask=mask)
+            dark_pixels = np.sum(binary > 0)
+        else:
+            # Adaptive threshold for normal lighting
+            binary = cv2.adaptiveThreshold(
+                gray,  # Use full gray image, not masked
+                255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY_INV,
+                11,
+                2
+            )
+            binary = cv2.bitwise_and(binary, binary, mask=mask)
+            dark_pixels = np.sum(binary > 0)
     else:
         # Simple threshold
         dark_pixels = np.sum((masked < dark_threshold) & (mask > 0))
