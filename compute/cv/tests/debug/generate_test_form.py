@@ -16,6 +16,11 @@ Example:
     /
 
     python -m tests.debug.generate_test_form --template form_A --output tests/fixtures/images --conditions perfect --random-answers --seed 42 --save-answer-key tests/fixtures/answers_form_A.json
+
+    /
+
+    python -m tests.debug.generate_test_form --template form_60q --output tests/fixtures/images --conditions perfect --load-answer-key tests/fixtures/answer_keys/form_60q_answers.json
+
 """
 import argparse
 import sys
@@ -338,6 +343,7 @@ def main():
     parser.add_argument("--conditions", default="all", 
                        help="Comma-separated conditions or 'all' (default: all)")
     parser.add_argument("--answers", help="Answer key as JSON, e.g., '{\"1\":\"A\",\"2\":\"B\"}'")
+    parser.add_argument("--load-answer-key", help="Path to load answer key JSON file")
     parser.add_argument("--random-answers", action="store_true", 
                         help="Fill a random answer for each question")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
@@ -351,11 +357,31 @@ def main():
     
     # Parse answers if provided
     answers = None
-    if args.answers:
-        import json
-        answers = json.loads(args.answers)
-        # Convert string keys to int
-        answers = {int(k): v for k, v in answers.items()}
+    import json
+    
+    # Load from file if specified
+    if args.load_answer_key:
+        try:
+            with open(args.load_answer_key, "r", encoding="utf-8") as f:
+                answers = json.load(f)
+                # Convert string keys to int
+                answers = {int(k): v for k, v in answers.items()}
+                logger.info(f"Loaded answer key from: {args.load_answer_key}")
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.error(f"Failed to load answer key: {e}")
+            sys.exit(1)
+    # Or parse from command line argument
+    elif args.answers:
+        try:
+            answers = json.loads(args.answers)
+            # Convert string keys to int
+            answers = {int(k): v for k, v in answers.items()}
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse answers JSON: {e}")
+            logger.error(f"Received: {args.answers}")
+            logger.info("Tip: In PowerShell, use double quotes and escape inner quotes:")
+            logger.info('  --answers \'{"1":"A","2":"B"}\'')
+            sys.exit(1)
     
     # Initialize generator to access template
     generator = TestFormGenerator(args.template, args.output)
