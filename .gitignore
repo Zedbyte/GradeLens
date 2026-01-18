@@ -2,6 +2,5 @@
 **/storage/scans
 __pycache__/
 *.pyc
-**/compute/cv/tests_output
 **/compute/cv/tests/fixtures/images/*.png
 **/compute/cv/tests/output
