@@ -109,10 +109,10 @@ def run_worker():
                 logger.info(f"Processing time: {result.processing_time_ms:.0f}ms")
                 
                 if settings.debug:
-                    logger.debug(f"Full result: {result.dict()}")
+                    logger.debug(f"Full result: {result.model_dump()}")
                 
                 # Push result to results queue
-                result_json = json.dumps(result.dict())
+                result_json = result.json()  # Use Pydantic's JSON serialization (handles datetime)
                 redis_client.lpush(RESULTS_QUEUE, result_json)
                 logger.debug(f"Result pushed to {RESULTS_QUEUE}")
                 
