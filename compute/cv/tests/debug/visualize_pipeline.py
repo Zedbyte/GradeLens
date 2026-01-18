@@ -8,6 +8,8 @@ Usage:
     python -m tests.debug.visualize_pipeline --image <path> --template <template_id> --output <dir>
     
 Example:
+
+    # Basic test with sample image and form_A template
     python -m tests.debug.visualize_pipeline
         --image storage/scans/sample_test_vertical.jpg
         --template form_A
@@ -15,8 +17,19 @@ Example:
 
     /
 
+    # Perfect form A
+    python -m tests.debug.visualize_pipeline \
+        --image tests/fixtures/images/test_perfect_form_A.png \
+        --template form_A \
+        --output tests/output/debug_002
 
-    python -m tests.debug.visualize_pipeline --image tests/fixtures/images/test_perfect_form_A.png --template form_A --output tests/output/debug_001
+    /
+
+    # Perfect form with 60 questions
+    python -m tests.debug.visualize_pipeline \
+        --image tests/fixtures/images/test_perfect_form_60q.png \
+        --template form_60q \
+        --output tests/output/debug_60q
 """
 import argparse
 import sys

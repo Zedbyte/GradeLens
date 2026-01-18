@@ -15,11 +15,23 @@ Example:
 
     /
 
-    python -m tests.debug.generate_test_form --template form_A --output tests/fixtures/images --conditions perfect --random-answers --seed 42 --save-answer-key tests/fixtures/answer_keys/answers_form_A.json
+    # Generate with random answers and save answer key
+    python -m tests.debug.generate_test_form \ 
+    --template form_A \ 
+    --output tests/fixtures/images \ 
+    --conditions perfect \ 
+    --random-answers --seed 42 \ 
+    --save-answer-key tests/fixtures/answer_keys/answers_form_A.json
 
     /
 
-    python -m tests.debug.generate_test_form --template form_60q --output tests/fixtures/images --conditions perfect --load-answer-key tests/fixtures/answer_keys/form_60q_answers.json
+    # Generate using existing answer key file
+    python -m tests.debug.generate_test_form \ 
+    --template form_60q \ 
+    --output tests/fixtures/images \ 
+    --conditions perfect \ 
+    --load-answer-key \ 
+    tests/fixtures/answer_keys/form_60q_answers.json
 
 """
 import argparse
