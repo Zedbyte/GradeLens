@@ -2,8 +2,8 @@ export interface Scan {
   scan_id: string;
   status: "pending" | "processing" | "completed" | "failed";
   confidence?: number;
-  logs?: any[];
-  results?: any;
+  logs?: never;
+  results?: never;
   createdAt?: string;
   updatedAt?: string;
 }
