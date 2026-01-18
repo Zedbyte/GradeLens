@@ -103,10 +103,11 @@ class BenchmarkReport:
 class AccuracyBenchmark:
     """Benchmarks pipeline accuracy against known answers."""
     
-    def __init__(self, template_id: str, answer_key_path: str = None):
+    def __init__(self, template_id: str, answer_key_path: str = None, save_debug_images: bool = False):
         self.template_id = template_id
         self.answer_key = self._load_answer_key(answer_key_path)
         self.results: List[ImageAccuracy] = []
+        self.save_debug_images = save_debug_images
     
     def _load_answer_key(self, path: str = None) -> Dict[int, str]:
         """
@@ -143,6 +144,10 @@ class AccuracyBenchmark:
         except Exception as e:
             logger.error(f"  Pipeline failed: {e}")
             return self._create_failed_result(image_path.name, str(e))
+        
+        # Save debug visualization if requested
+        if self.save_debug_images:
+            self._save_debug_visualization(image_path, result)
         
         # Compare with answer key
         question_details = []
@@ -209,6 +214,122 @@ class AccuracyBenchmark:
         logger.info(f"  Status: {result.status}")
         
         return image_accuracy
+    
+    def _save_debug_visualization(self, image_path: Path, result):
+        """Save visualization showing detected circles and ROI extraction."""
+        import cv2
+        from app.templates.loader import load_template
+        from app.pipeline.align import align_image_with_template
+        from app.pipeline.preprocess import preprocess_image
+        from app.pipeline.paper_detection import detect_paper_boundary
+        from app.pipeline.perspective import correct_perspective
+        
+        try:
+            # Load template and image
+            template = load_template(self.template_id)
+            preprocessed, _ = preprocess_image(str(image_path))
+            
+            # Detect and correct perspective
+            boundary = detect_paper_boundary(preprocessed)
+            corrected = correct_perspective(
+                preprocessed,
+                boundary,
+                (template.canonical_size.width, template.canonical_size.height)
+            )
+            
+            if corrected is None:
+                logger.warning(f"  Could not create debug visualization for {image_path.name}")
+                return
+            
+            # Apply fine alignment - CRITICAL for accurate visualization!
+            try:
+                aligned, alignment_success = align_image_with_template(
+                    corrected,
+                    template,
+                    strict=False
+                )
+                if not alignment_success:
+                    logger.warning(f"  Alignment failed for debug visualization, using perspective-corrected image")
+                    aligned = corrected
+            except Exception as e:
+                logger.warning(f"  Alignment error in debug visualization: {e}")
+                aligned = corrected
+            
+            # Convert to BGR for drawing
+            if len(aligned.shape) == 2:
+                vis_img = cv2.cvtColor(aligned, cv2.COLOR_GRAY2BGR)
+            else:
+                vis_img = aligned.copy()
+            
+            # Extract expected mark positions from template
+            expected_marks = [(mark.position.x, mark.position.y) for mark in template.registration_marks]
+            
+            # Draw expected marks (blue circles)
+            for i, (x, y) in enumerate(expected_marks):
+                cv2.circle(vis_img, (x, y), 20, (255, 0, 0), 2)  # Blue outline
+                cv2.putText(vis_img, f"E{i+1}", (x-10, y-30), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+            
+            # Draw bubble ROI boxes for each question
+            for detection in result.detections:
+                q_id = detection.question_id
+                # Find template question
+                template_q = next((q for q in template.questions if q.question_id == q_id), None)
+                if not template_q:
+                    continue
+                
+                # Draw box around entire question ROI
+                # template_q.options is Dict[str, Position]
+                positions = [(pos.x, pos.y) for pos in template_q.options.values()]
+                if positions:
+                    xs = [p[0] for p in positions]
+                    ys = [p[1] for p in positions]
+                    x1, y1 = min(xs) - 15, min(ys) - 15
+                    x2, y2 = max(xs) + 15, max(ys) + 15
+                    cv2.rectangle(vis_img, (x1, y1), (x2, y2), (0, 255, 0), 1)  # Green box
+                    
+                    # Draw each bubble circle
+                    for option_letter, position in template_q.options.items():
+                        x, y = position.x, position.y
+                        fill_ratio = detection.fill_ratios.get(option_letter, 0.0)
+                        
+                        # Color based on detection
+                        if option_letter in detection.selected:
+                            color = (0, 255, 0)  # Green for selected
+                            thickness = 2
+                        elif fill_ratio > 0.5:
+                            color = (0, 165, 255)  # Orange for high fill
+                            thickness = 2
+                        else:
+                            color = (200, 200, 200)  # Gray for empty
+                            thickness = 1
+                        
+                        cv2.circle(vis_img, (x, y), 12, color, thickness)
+                        cv2.putText(vis_img, option_letter, (x-5, y+5),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
+            
+            # Add info text
+            cv2.putText(vis_img, f"Registration marks: {len(expected_marks)}", 
+                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            cv2.putText(vis_img, f"Questions detected: {len(result.detections)}", 
+                       (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            cv2.putText(vis_img, f"Status: {result.status}", 
+                       (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            cv2.putText(vis_img, f"Aligned: {alignment_success if 'alignment_success' in locals() else 'N/A'}", 
+                       (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            
+            # Save (relative to cv/tests directory)
+            tests_dir = Path(__file__).parent.parent
+            output_dir = tests_dir / "output" / "benchmark_debug"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / f"{image_path.stem}_debug.png"
+            cv2.imwrite(str(output_path), vis_img)
+            logger.info(f"  Debug visualization saved: {output_path}")
+            
+        except Exception as e:
+            logger.warning(f"  Failed to create debug visualization: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
     
     def _create_failed_result(self, image_name: str, error: str) -> ImageAccuracy:
         """Create result for failed pipeline."""
@@ -416,6 +537,8 @@ def main():
     parser.add_argument("--template", required=True, help="Template ID (e.g., form_A)")
     parser.add_argument("--answer-key", help="Path to answer key JSON file")
     parser.add_argument("--report", help="Output path for JSON report")
+    parser.add_argument("--save-debug", action="store_true", 
+                       help="Save debug images showing detected circles and ROI boxes")
     
     args = parser.parse_args()
     
@@ -424,7 +547,7 @@ def main():
     logger.add(sys.stderr, level="INFO")
     
     # Run benchmark
-    benchmark = AccuracyBenchmark(args.template, args.answer_key)
+    benchmark = AccuracyBenchmark(args.template, args.answer_key, save_debug_images=args.save_debug)
     report = benchmark.benchmark_directory(Path(args.test_dir))
     
     # Print summary
@@ -433,6 +556,9 @@ def main():
     # Save report if requested
     if args.report:
         benchmark.save_report(report, Path(args.report))
+    
+    if args.save_debug:
+        logger.info(f"\nDebug images saved to: tests/output/benchmark_debug/")
 
 
 if __name__ == "__main__":
