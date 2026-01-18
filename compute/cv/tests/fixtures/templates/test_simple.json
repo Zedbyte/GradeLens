@@ -1,0 +1,91 @@
+{
+  "template_id": "test_simple",
+  "template_name": "Simple Test Form",
+  "version": "1.0",
+  "canonical_size": {
+    "width": 2100,
+    "height": 2970
+  },
+  "registration_marks": [
+    {
+      "id": "top_left",
+      "type": "circle",
+      "x": 200,
+      "y": 200,
+      "size": 30
+    },
+    {
+      "id": "top_right",
+      "type": "circle",
+      "x": 1900,
+      "y": 200,
+      "size": 30
+    },
+    {
+      "id": "bottom_left",
+      "type": "circle",
+      "x": 200,
+      "y": 2770,
+      "size": 30
+    },
+    {
+      "id": "bottom_right",
+      "type": "circle",
+      "x": 1900,
+      "y": 2770,
+      "size": 30
+    }
+  ],
+  "bubble_config": {
+    "radius": 20,
+    "filled_threshold": 0.30,
+    "ambiguous_threshold": 0.65
+  },
+  "questions": [
+    {
+      "question_id": 1,
+      "options": [
+        {"option_id": "A", "x": 500, "y": 400},
+        {"option_id": "B", "x": 600, "y": 400},
+        {"option_id": "C", "x": 700, "y": 400},
+        {"option_id": "D", "x": 800, "y": 400}
+      ]
+    },
+    {
+      "question_id": 2,
+      "options": [
+        {"option_id": "A", "x": 500, "y": 500},
+        {"option_id": "B", "x": 600, "y": 500},
+        {"option_id": "C", "x": 700, "y": 500},
+        {"option_id": "D", "x": 800, "y": 500}
+      ]
+    },
+    {
+      "question_id": 3,
+      "options": [
+        {"option_id": "A", "x": 500, "y": 600},
+        {"option_id": "B", "x": 600, "y": 600},
+        {"option_id": "C", "x": 700, "y": 600},
+        {"option_id": "D", "x": 800, "y": 600}
+      ]
+    },
+    {
+      "question_id": 4,
+      "options": [
+        {"option_id": "A", "x": 500, "y": 700},
+        {"option_id": "B", "x": 600, "y": 700},
+        {"option_id": "C", "x": 700, "y": 700},
+        {"option_id": "D", "x": 800, "y": 700}
+      ]
+    },
+    {
+      "question_id": 5,
+      "options": [
+        {"option_id": "A", "x": 500, "y": 800},
+        {"option_id": "B", "x": 600, "y": 800},
+        {"option_id": "C", "x": 700, "y": 800},
+        {"option_id": "D", "x": 800, "y": 800}
+      ]
+    }
+  ]
+}
