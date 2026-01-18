@@ -95,7 +95,7 @@ def ensure_output_dir(test_name: str) -> Path:
     Returns:
         Path to output directory
     """
-    output_dir = Path(__file__).parent.parent.parent / "tests_output" / test_name
+    output_dir = Path(__file__).parent.parent.parent / "tests" / "output" / test_name
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
