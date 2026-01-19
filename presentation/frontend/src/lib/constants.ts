@@ -2,6 +2,9 @@ export const ROUTES = {
   LOGIN: "/login",
   DASHBOARD: "/",
   SCAN: "/scans",
+  STUDENTS: "/students",
+  CLASSES: "/classes",
+  QUIZZES: "/quizzes",
 } as const;
 
 export const QUERY_KEYS = {
