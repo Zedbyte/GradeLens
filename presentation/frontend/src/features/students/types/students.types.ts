@@ -12,9 +12,9 @@ export interface Student {
   class_ids: string[];
   date_of_birth?: string;
   status: "active" | "inactive" | "graduated";
+  grade_id?: string;
+  section_id?: string;
   metadata?: {
-    grade_level?: string;
-    section?: string;
     guardian_contact?: string;
     notes?: string;
   };
@@ -30,9 +30,9 @@ export interface CreateStudentRequest {
   email?: string;
   class_ids?: string[];
   date_of_birth?: string;
+  grade_id?: string;
+  section_id?: string;
   metadata?: {
-    grade_level?: string;
-    section?: string;
     guardian_contact?: string;
     notes?: string;
   };
@@ -45,9 +45,9 @@ export interface UpdateStudentRequest {
   class_ids?: string[];
   date_of_birth?: string;
   status?: "active" | "inactive" | "graduated";
+  grade_id?: string;
+  section_id?: string;
   metadata?: {
-    grade_level?: string;
-    section?: string;
     guardian_contact?: string;
     notes?: string;
   };
