@@ -13,5 +13,23 @@ export const API_ROUTES = {
         BASE: "/scans",
         BY_ID: (scanId: string) => `/scans/${scanId}`,
     },
+    STUDENTS: {
+        BASE: "/students",
+        BY_ID: (studentId: string) => `/students/${studentId}`,
+        BY_STUDENT_ID: (studentId: string) => `/students/by-student-id/${studentId}`,
+    },
+    CLASSES: {
+        BASE: "/classes",
+        BY_ID: (classId: string) => `/classes/${classId}`,
+        STUDENTS: (classId: string) => `/classes/${classId}/students`,
+        REMOVE_STUDENT: (classId: string, studentId: string) => `/classes/${classId}/students/${studentId}`,
+    },
+    QUIZZES: {
+        BASE: "/quizzes",
+        BY_ID: (quizId: string) => `/quizzes/${quizId}`,
+        STATUS: (quizId: string) => `/quizzes/${quizId}/status`,
+        STATISTICS: (quizId: string) => `/quizzes/${quizId}/statistics`,
+        SCANS: (quizId: string) => `/quizzes/${quizId}/scans`,
+    },
     HEALTH: "/",
 } as const;
