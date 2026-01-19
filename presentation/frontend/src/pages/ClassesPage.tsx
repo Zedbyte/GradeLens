@@ -5,17 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconEdit, IconTrash, IconUsers } from "@tabler/icons-react";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { ClassFormDialog } from "@/features/classes/components/ClassFormDialog";
+import { useGrades } from "@/features/grades/hooks/useGrades";
+import { useSections } from "@/features/sections/hooks/useSections";
 import type { Class, CreateClassRequest, UpdateClassRequest } from "@/features/classes/types/classes.types";
 
 export default function ClassesPage() {
   const { classes, loading, error, total, loadClasses, createClass, updateClass, deleteClass } = useClasses();
+  const { grades, loadGrades } = useGrades();
+  const { sections, loadSections } = useSections();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | undefined>();
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
 
   useEffect(() => {
     loadClasses();
-  }, [loadClasses]);
+    loadGrades();
+    loadSections();
+  }, [loadClasses, loadGrades, loadSections]);
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to archive ${name}?`)) {
@@ -110,7 +116,6 @@ export default function ClassesPage() {
                       <span>ID: {cls.class_id}</span>
                       <span>Academic Year: {cls.academic_year}</span>
                       {cls.subject && <span>Subject: {cls.subject}</span>}
-                      {cls.section && <span>Section: {cls.section}</span>}
                     </div>
                     <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
                       <IconUsers className="size-4" />
@@ -142,6 +147,8 @@ export default function ClassesPage() {
         onSubmit={handleSubmit}
         classData={editingClass}
         mode={dialogMode}
+        grades={grades}
+        sections={sections}
       />
     </div>
   );

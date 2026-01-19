@@ -5,17 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
 import { useStudents } from "@/features/students/hooks/useStudents";
 import { StudentFormDialog } from "@/features/students/components/StudentFormDialog";
+import { useGrades } from "@/features/grades/hooks/useGrades";
+import { useSections } from "@/features/sections/hooks/useSections";
 import type { CreateStudentRequest, Student, UpdateStudentRequest } from "@/features/students/types/students.types";
 
 export default function StudentsPage() {
   const { students, loading, error, total, loadStudents, createStudent, updateStudent, deleteStudent } = useStudents();
+  const { grades, loadGrades } = useGrades();
+  const { sections, loadSections } = useSections();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | undefined>();
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
 
   useEffect(() => {
     loadStudents();
-  }, [loadStudents]);
+    loadGrades();
+    loadSections();
+  }, [loadStudents, loadGrades, loadSections]);
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to deactivate ${name}?`)) {
@@ -111,9 +117,6 @@ export default function StudentsPage() {
                     <div className="mt-1 flex gap-4 text-sm text-muted-foreground">
                       <span>ID: {student.student_id}</span>
                       {student.email && <span>{student.email}</span>}
-                      {student.metadata?.grade_level && (
-                        <span>Grade: {student.metadata.grade_level}</span>
-                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -146,6 +149,8 @@ export default function StudentsPage() {
         onSubmit={handleSubmit}
         student={editingStudent}
         mode={dialogMode}
+        grades={grades}
+        sections={sections}
       />
     </div>
   );
