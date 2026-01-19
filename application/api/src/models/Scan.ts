@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 import type { DetectionResult } from "../types/detection_result.types.ts";
 import type { GradingResult } from "../types/grading_result.types.ts";
 
@@ -50,8 +50,19 @@ const ScanSchema = new Schema(
       index: true 
     },
     exam_id: { 
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Exam",
       index: true 
+    },
+    student_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Student",
+      index: true
+    },
+    class_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Class",
+      index: true
     },
     
     // Status tracking
@@ -153,6 +164,8 @@ ScanSchema.index({ status: 1, createdAt: -1 });
 ScanSchema.index({ exam_id: 1, status: 1 });
 ScanSchema.index({ template_id: 1, createdAt: -1 });
 ScanSchema.index({ uploaded_by: 1, createdAt: -1 });
+ScanSchema.index({ student_id: 1, exam_id: 1 });
+ScanSchema.index({ class_id: 1, status: 1 });
 
 // Virtual for overall confidence (derived from detection result)
 ScanSchema.virtual("overall_confidence").get(function() {
@@ -198,7 +211,6 @@ ScanSchema.methods.recordDetectionResult = function(result: DetectionResult) {
 
 ScanSchema.methods.recordGradingResult = function(result: GradingResult) {
   this.grading_result = result;
-  this.exam_id = result.exam_id;
   
   if (result.needs_manual_review) {
     this.status = "needs_review";
@@ -216,8 +228,20 @@ ScanSchema.statics.findNeedingReview = function() {
   return this.find({ status: "needs_review" }).sort({ createdAt: 1 });
 };
 
-ScanSchema.statics.findByExam = function(exam_id: string) {
+ScanSchema.statics.findByExam = function(exam_id: Types.ObjectId) {
   return this.find({ exam_id }).sort({ createdAt: -1 });
+};
+
+ScanSchema.statics.findByStudent = function(student_id: Types.ObjectId, exam_id?: Types.ObjectId) {
+  const query: any = { student_id };
+  if (exam_id) query.exam_id = exam_id;
+  return this.find(query).sort({ createdAt: -1 });
+};
+
+ScanSchema.statics.findByClass = function(class_id: Types.ObjectId, exam_id?: Types.ObjectId) {
+  const query: any = { class_id };
+  if (exam_id) query.exam_id = exam_id;
+  return this.find(query).sort({ createdAt: -1 });
 };
 
 export const ScanModel = model("Scan", ScanSchema);

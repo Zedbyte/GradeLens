@@ -1,11 +1,11 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 import type { AnswerKey } from "../types/answer_key.types.ts";
 
 /**
- * Exam Model
+ * Exam/Quiz Model
  * 
- * Stores exam definitions including answer keys and grading policies.
- * Used by Node.js grading logic to compare detection results.
+ * Stores exam/quiz definitions including answer keys, grading policies,
+ * and class assignments. Used by Node.js grading logic to compare detection results.
  */
 
 const AnswerSchema = new Schema({
@@ -43,6 +43,27 @@ const ExamSchema = new Schema(
       type: String, 
       required: true 
     },
+    description: {
+      type: String,
+      trim: true
+    },
+    
+    // Class assignment
+    class_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Class",
+      index: true
+    },
+    
+    // Quiz/Exam scheduling
+    scheduled_date: {
+      type: Date,
+      index: true
+    },
+    due_date: {
+      type: Date
+    },
+    
     answers: { 
       type: [AnswerSchema], 
       required: true,
@@ -81,6 +102,12 @@ const ExamSchema = new Schema(
       type: Boolean, 
       default: true, 
       index: true 
+    },
+    status: {
+      type: String,
+      enum: ["draft", "active", "completed", "archived"],
+      default: "draft",
+      index: true
     }
   },
   { 
@@ -93,6 +120,8 @@ const ExamSchema = new Schema(
 // Indexes for common queries
 ExamSchema.index({ template_id: 1, is_active: 1 });
 ExamSchema.index({ created_by: 1, createdAt: -1 });
+ExamSchema.index({ class_id: 1, status: 1 });
+ExamSchema.index({ scheduled_date: 1 });
 
 // Pre-save middleware to calculate denormalized fields
 ExamSchema.pre("save", function(next) {
@@ -130,6 +159,18 @@ ExamSchema.statics.findActiveByTemplate = function(template_id: string) {
 
 ExamSchema.statics.findByExamId = function(exam_id: string) {
   return this.findOne({ exam_id, is_active: true });
+};
+
+ExamSchema.statics.findByClass = function(class_id: Types.ObjectId, status?: string) {
+  const query: any = { class_id, is_active: true };
+  if (status) query.status = status;
+  return this.find(query).sort({ scheduled_date: -1, createdAt: -1 });
+};
+
+ExamSchema.statics.findActiveExams = function(created_by?: string) {
+  const query: any = { status: "active", is_active: true };
+  if (created_by) query.created_by = created_by;
+  return this.find(query).sort({ scheduled_date: -1 });
 };
 
 export const ExamModel = model("Exam", ExamSchema);

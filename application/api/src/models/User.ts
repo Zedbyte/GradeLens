@@ -6,7 +6,7 @@ import mongoose, { Schema, Document } from "mongoose";
  * ============================
  */
 
-export type UserRole = "student" | "teacher" | "admin";
+export type UserRole = "teacher" | "admin";
 
 export interface RefreshToken {
   tokenHash: string;
