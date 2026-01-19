@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, Model } from "mongoose";
 
 /**
  * Student Model
@@ -12,11 +12,11 @@ export interface IStudent {
   last_name: string;
   email?: string;
   class_ids: Types.ObjectId[];  // References to Class documents
+  grade_id?: Types.ObjectId;    // Reference to Grade document
+  section_id?: Types.ObjectId;  // Reference to Section document
   date_of_birth?: Date;
   status: "active" | "inactive" | "graduated";
   metadata?: {
-    grade_level?: string;
-    section?: string;
     guardian_contact?: string;
     notes?: string;
   };
@@ -25,7 +25,19 @@ export interface IStudent {
   updated_at?: Date;
 }
 
-const StudentSchema = new Schema<IStudent>(
+// Instance methods interface
+export interface IStudentMethods {}
+
+// Static methods interface
+export interface IStudentModel extends Model<IStudent, {}, IStudentMethods> {
+  findByStudentId(student_id: string): Promise<(IStudent & IStudentMethods) | null>;
+  findByClass(class_id: Types.ObjectId): Promise<(IStudent & IStudentMethods)[]>;
+  findActiveStudents(created_by?: string): Promise<(IStudent & IStudentMethods)[]>;
+  findByGrade(grade_id: Types.ObjectId): Promise<(IStudent & IStudentMethods)[]>;
+  findBySection(section_id: Types.ObjectId): Promise<(IStudent & IStudentMethods)[]>;
+}
+
+const StudentSchema = new Schema<IStudent, IStudentModel, IStudentMethods>(
   {
     student_id: {
       type: String,
@@ -54,6 +66,16 @@ const StudentSchema = new Schema<IStudent>(
       type: Schema.Types.ObjectId,
       ref: "Class"
     }],
+    grade_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Grade",
+      index: true
+    },
+    section_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Section",
+      index: true
+    },
     date_of_birth: {
       type: Date
     },
@@ -64,8 +86,6 @@ const StudentSchema = new Schema<IStudent>(
       index: true
     },
     metadata: {
-      grade_level: { type: String },
-      section: { type: String },
       guardian_contact: { type: String },
       notes: { type: String }
     },
@@ -90,6 +110,7 @@ StudentSchema.virtual("full_name").get(function() {
 StudentSchema.index({ last_name: 1, first_name: 1 });
 StudentSchema.index({ created_by: 1, status: 1 });
 StudentSchema.index({ class_ids: 1 });
+StudentSchema.index({ grade_id: 1, section_id: 1 });
 
 // Static methods
 StudentSchema.statics.findByStudentId = function(student_id: string) {
@@ -109,6 +130,14 @@ StudentSchema.statics.findActiveStudents = function(created_by?: string) {
   return this.find(query).sort({ last_name: 1, first_name: 1 });
 };
 
-export const StudentModel = model<IStudent>("Student", StudentSchema);
+StudentSchema.statics.findByGrade = function(grade_id: Types.ObjectId) {
+  return this.find({ grade_id, status: "active" }).sort({ last_name: 1, first_name: 1 });
+};
+
+StudentSchema.statics.findBySection = function(section_id: Types.ObjectId) {
+  return this.find({ section_id, status: "active" }).sort({ last_name: 1, first_name: 1 });
+};
+
+export const StudentModel = model<IStudent, IStudentModel>("Student", StudentSchema);
 
 export type StudentDocument = InstanceType<typeof StudentModel>;

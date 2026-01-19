@@ -9,12 +9,13 @@ import { Schema, model, Types, Model } from "mongoose";
 
 export interface IClass {
   class_id: string;              // Unique class identifier
-  name: string;                  // Class name (e.g., "Grade 10 - Section A")
+  name: string;                  // Class name (e.g., "Grade 10 Mathematics - Section A")
   description?: string;
   teacher_id: string;            // User ID of the teacher/creator
   student_ids: Types.ObjectId[]; // References to Student documents
   academic_year: string;         // e.g., "2025-2026"
-  section?: string;              // e.g., "A", "B", "Morning"
+  grade_id?: Types.ObjectId;     // Reference to Grade document
+  section_id?: Types.ObjectId;   // Reference to Section document
   subject?: string;              // e.g., "Mathematics", "Science"
   status: "active" | "archived" | "completed";
   metadata?: {
@@ -73,9 +74,15 @@ const ClassSchema = new Schema<IClass, IClassModel, IClassMethods>(
       required: true,
       index: true
     },
-    section: {
-      type: String,
-      trim: true
+    grade_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Grade",
+      index: true
+    },
+    section_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Section",
+      index: true
     },
     subject: {
       type: String,
