@@ -9,22 +9,22 @@ Usage:
 
 Example:
     # Basic test with sample images and form_A template
-    python -m tests.debug.benchmark_accuracy \
-        --test-dir tests/fixtures/images \
-        --template form_A \
+    python -m tests.debug.benchmark_accuracy
+        --test-dir tests/fixtures/images
+        --template form_A
         --report tests/output/accuracy_report.json
 
     # Using custom answer key
-    python -m tests.debug.benchmark_accuracy \
-    --test-dir tests/fixtures/images \
-    --template form_60q \
+    python -m tests.debug.benchmark_accuracy
+    --test-dir tests/fixtures/images
+    --template form_60q
     --answer-key tests/fixtures/answer_keys/form_60q_answers.json
 
     # With debug visualizations saved
-    python -m tests.debug.benchmark_accuracy \
-    --test-dir tests/fixtures/images \
-    --template form_60q \
-    --answer-key tests/fixtures/answer_keys/form_60q_answers.json \
+    python -m tests.debug.benchmark_accuracy
+    --test-dir tests/fixtures/images
+    --template form_60q
+    --answer-key tests/fixtures/answer_keys/form_60q_answers.json
     --save-debug
 
 """

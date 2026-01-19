@@ -18,17 +18,17 @@ Example:
     /
 
     # Perfect form A
-    python -m tests.debug.visualize_pipeline \
-        --image tests/fixtures/images/test_perfect_form_A.png \
-        --template form_A \
+    python -m tests.debug.visualize_pipeline
+        --image tests/fixtures/images/test_perfect_form_A.png
+        --template form_A
         --output tests/output/debug_002
 
     /
 
     # Perfect form with 60 questions
-    python -m tests.debug.visualize_pipeline \
-        --image tests/fixtures/images/test_perfect_form_60q.png \
-        --template form_60q \
+    python -m tests.debug.visualize_pipeline
+        --image tests/fixtures/images/test_perfect_form_60q.png
+        --template form_60q
         --output tests/output/debug_60q
 """
 import argparse

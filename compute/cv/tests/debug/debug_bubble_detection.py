@@ -4,9 +4,9 @@ Shows individual bubble ROIs and their calculated fill ratios.
 
 
 Example usage:
-    python -m tests.debug.debug_bubble_detection \
-        --image tests\fixtures\images\test_perfect_form_60q.png \
-        --template form_60q \
+    python -m tests.debug.debug_bubble_detection
+        --image tests\fixtures\images\test_perfect_form_60q.png
+        --template form_60q
         --questions 1 2 3 4 5 6 7 8 9 10 21 22 23 24 41 42 43 44
 
 """
