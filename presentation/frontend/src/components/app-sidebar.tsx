@@ -12,6 +12,8 @@ import {
   IconFileAnalytics,
   IconUser,
   IconCategoryPlus,
+  IconSchool,
+  IconCategory,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main.tsx"
@@ -37,14 +39,34 @@ const navMain = [
     icon: IconDashboard,
   },
   {
+    title: "Quizzes", //Page where we can create quizzes and assign them to classes, and answer keys
+    url: ROUTES.QUIZZES,
+    icon: IconWallpaper,
+  },
+  {
     title: "Scans", //Page to scan/upload student answer sheets
     url: ROUTES.SCAN,
     icon: IconCamera,
   },
   {
-    title: "Quizzes", //Page where we can create quizzes and assign them to classes, and answer keys
-    url: '#',
-    icon: IconWallpaper,
+    title: "Students", //Create accounts, and students.
+    url: ROUTES.STUDENTS,
+    icon: IconUser,
+  },
+  {
+    title: "Classes", //Create classes and assign students to classes
+    url: ROUTES.CLASSES,
+    icon: IconCategoryPlus,
+  },
+  {
+    title: "Grades", //Manage grade levels
+    url: ROUTES.GRADES,
+    icon: IconSchool,
+  },
+  {
+    title: "Sections", //Manage sections
+    url: ROUTES.SECTIONS,
+    icon: IconCategory,
   },
   {
     title: "Report (Summary)", //This includes per student summary, mean-pl etc.
@@ -55,11 +77,6 @@ const navMain = [
     title: "Accounts", //Create accounts, and students.
     url: '#',
     icon: IconUser,
-  },
-  {
-    title: "Classes", //Create classes and assign students to classes
-    url: '#',
-    icon: IconCategoryPlus,
   },
 ]
 
