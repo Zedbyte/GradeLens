@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, Model } from "mongoose";
 
 /**
  * Class Model
@@ -27,7 +27,21 @@ export interface IClass {
   updated_at?: Date;
 }
 
-const ClassSchema = new Schema<IClass>(
+// Instance methods interface
+export interface IClassMethods {
+  addStudent(student_id: Types.ObjectId): Promise<this>;
+  removeStudent(student_id: Types.ObjectId): Promise<this>;
+}
+
+// Static methods interface
+export interface IClassModel extends Model<IClass, {}, IClassMethods> {
+  findByClassId(class_id: string): Promise<(IClass & IClassMethods) | null>;
+  findByTeacher(teacher_id: string, status?: string): Promise<(IClass & IClassMethods)[]>;
+  findActiveClasses(teacher_id?: string): Promise<(IClass & IClassMethods)[]>;
+  findByAcademicYear(academic_year: string, teacher_id?: string): Promise<(IClass & IClassMethods)[]>;
+}
+
+const ClassSchema = new Schema<IClass, IClassModel, IClassMethods>(
   {
     class_id: {
       type: String,
@@ -140,6 +154,6 @@ ClassSchema.methods.removeStudent = async function(student_id: Types.ObjectId) {
   return this;
 };
 
-export const ClassModel = model<IClass>("Class", ClassSchema);
+export const ClassModel = model<IClass, IClassModel>("Class", ClassSchema);
 
 export type ClassDocument = InstanceType<typeof ClassModel>;
