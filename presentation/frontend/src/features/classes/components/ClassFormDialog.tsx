@@ -13,15 +13,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import type { Class } from "../types/classes.types";
+import type { Grade } from "@/features/grades/types/grades.types";
+import type { Section } from "@/features/sections/types/sections.types";
 
 const classSchema = z.object({
   class_id: z.string().min(1, "Class ID is required"),
   name: z.string().min(1, "Class name is required"),
   academic_year: z.string().min(1, "Academic year is required"),
-  section: z.string().optional(),
+  grade_id: z.string().optional(),
+  section_id: z.string().optional(),
   subject: z.string().optional(),
-  status: z.enum(["active", "completed", "archived"]).default("active"),
+  status: z.enum(["active", "completed", "archived"]),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -32,6 +36,8 @@ interface ClassFormDialogProps {
   onSubmit: (data: ClassFormData) => Promise<boolean>;
   classData?: Class;
   mode: "create" | "edit";
+  grades: Grade[];
+  sections: Section[];
 }
 
 export function ClassFormDialog({
@@ -40,6 +46,8 @@ export function ClassFormDialog({
   onSubmit,
   classData,
   mode,
+  grades,
+  sections,
 }: ClassFormDialogProps) {
   const {
     register,
@@ -59,7 +67,8 @@ export function ClassFormDialog({
       setValue("class_id", classData.class_id);
       setValue("name", classData.name);
       setValue("academic_year", classData.academic_year);
-      setValue("section", classData.section || "");
+      setValue("grade_id", classData.grade_id || "");
+      setValue("section_id", classData.section_id || "");
       setValue("subject", classData.subject || "");
       setValue("status", classData.status);
     } else {
@@ -67,7 +76,8 @@ export function ClassFormDialog({
         class_id: "",
         name: "",
         academic_year: new Date().getFullYear().toString(),
-        section: "",
+        grade_id: "",
+        section_id: "",
         subject: "",
         status: "active",
       });
@@ -75,7 +85,13 @@ export function ClassFormDialog({
   }, [classData, mode, setValue, reset]);
 
   const onSubmitForm = async (data: ClassFormData) => {
-    const success = await onSubmit(data);
+    // Remove empty grade_id and section_id
+    const cleanData = {
+      ...data,
+      grade_id: data.grade_id || undefined,
+      section_id: data.section_id || undefined,
+    };
+    const success = await onSubmit(cleanData);
     if (success) {
       reset();
       onOpenChange(false);
@@ -149,29 +165,59 @@ export function ClassFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="section">Section</Label>
-              <Input
-                id="section"
-                {...register("section")}
-                placeholder="e.g., A, B, 1"
-              />
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                {...register("status")}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              >
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
+              {errors.status && (
+                <p className="text-sm text-destructive">{errors.status.message}</p>
+              )}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <select
-              id="status"
-              {...register("status")}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-            >
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="archived">Archived</option>
-            </select>
-            {errors.status && (
-              <p className="text-sm text-destructive">{errors.status.message}</p>
-            )}
+          <div className="space-y-4 rounded-lg border p-4">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-medium">Class Assignment</h4>
+              <Badge variant="outline">Optional</Badge>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="grade_id">Grade</Label>
+              <select
+                id="grade_id"
+                {...register("grade_id")}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              >
+                <option value="">Select Grade</option>
+                {grades.map((grade) => (
+                  <option key={grade._id} value={grade._id}>
+                    {grade.name} (Level {grade.level})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="section_id">Section</Label>
+              <select
+                id="section_id"
+                {...register("section_id")}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              >
+                <option value="">Select Section</option>
+                {sections.map((section) => (
+                  <option key={section._id} value={section._id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <DialogFooter>

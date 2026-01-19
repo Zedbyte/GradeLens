@@ -11,7 +11,8 @@ export interface Class {
   student_ids: string[];
   student_count?: number;
   academic_year: string;
-  section?: string;
+  grade_id?: string;
+  section_id?: string;
   subject?: string;
   status: "active" | "archived" | "completed";
   metadata?: {
@@ -29,7 +30,8 @@ export interface CreateClassRequest {
   name: string;
   description?: string;
   academic_year: string;
-  section?: string;
+  grade_id?: string;
+  section_id?: string;
   subject?: string;
   student_ids?: string[];
   metadata?: {
@@ -43,7 +45,8 @@ export interface UpdateClassRequest {
   name?: string;
   description?: string;
   academic_year?: string;
-  section?: string;
+  grade_id?: string;
+  section_id?: string;
   subject?: string;
   status?: "active" | "archived" | "completed";
   metadata?: {
