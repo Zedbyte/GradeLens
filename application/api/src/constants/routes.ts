@@ -31,5 +31,13 @@ export const API_ROUTES = {
         STATISTICS: (quizId: string) => `/quizzes/${quizId}/statistics`,
         SCANS: (quizId: string) => `/quizzes/${quizId}/scans`,
     },
+    GRADES: {
+        BASE: "/grades",
+        BY_ID: (gradeId: string) => `/grades/${gradeId}`,
+    },
+    SECTIONS: {
+        BASE: "/sections",
+        BY_ID: (sectionId: string) => `/sections/${sectionId}`,
+    },
     HEALTH: "/",
 } as const;
