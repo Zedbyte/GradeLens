@@ -1,0 +1,199 @@
+import { Request, Response, NextFunction } from "express";
+import { SectionModel } from "../models/Section.ts";
+import { GradeModel } from "../models/Grade.ts";
+import { Types } from "mongoose";
+
+/**
+ * Section Controller
+ * Handles CRUD operations for sections
+ */
+
+export interface CreateSectionRequest {
+  section_id: string;
+  name: string;
+  description?: string;
+  grade_id?: string;
+  capacity?: number;
+}
+
+export interface UpdateSectionRequest {
+  name?: string;
+  description?: string;
+  grade_id?: string;
+  capacity?: number;
+}
+
+export class SectionController {
+  /**
+   * Create a new section
+   * POST /api/sections
+   */
+  static async createSection(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const data: CreateSectionRequest = req.body;
+
+      // Check if section_id already exists
+      const existing = await SectionModel.findOne({ section_id: data.section_id });
+      if (existing) {
+        return res.status(409).json({ error: "Section ID already exists" });
+      }
+
+      // Verify grade exists if provided
+      if (data.grade_id) {
+        const grade = await GradeModel.findById(data.grade_id);
+        if (!grade) {
+          return res.status(404).json({ error: "Grade not found" });
+        }
+      }
+
+      const section = new SectionModel({
+        ...data,
+        created_by: userId,
+        is_active: true
+      });
+
+      await section.save();
+
+      res.status(201).json({
+        message: "Section created successfully",
+        section
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get all sections
+   * GET /api/sections
+   */
+  static async listSections(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { grade_id, page = 1, limit = 50 } = req.query;
+
+      const query: any = { is_active: true };
+      
+      if (grade_id) {
+        query.grade_id = grade_id;
+      }
+
+      const skip = (Number(page) - 1) * Number(limit);
+
+      const [sections, total] = await Promise.all([
+        SectionModel.find(query)
+          .populate("grade_id", "grade_id name level")
+          .sort({ name: 1 })
+          .skip(skip)
+          .limit(Number(limit))
+          .lean(),
+        SectionModel.countDocuments(query)
+      ]);
+
+      res.json({
+        sections,
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(total / Number(limit))
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get section by ID
+   * GET /api/sections/:id
+   */
+  static async getSection(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+
+      const section = await SectionModel.findOne({
+        _id: id,
+        is_active: true
+      }).populate("grade_id", "grade_id name level");
+
+      if (!section) {
+        return res.status(404).json({ error: "Section not found" });
+      }
+
+      res.json({ section });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update section
+   * PUT /api/sections/:id
+   */
+  static async updateSection(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const updates: UpdateSectionRequest = req.body;
+
+      const section = await SectionModel.findOne({
+        _id: id,
+        is_active: true
+      });
+
+      if (!section) {
+        return res.status(404).json({ error: "Section not found" });
+      }
+
+      // Verify grade exists if being updated
+      if (updates.grade_id) {
+        const grade = await GradeModel.findById(updates.grade_id);
+        if (!grade) {
+          return res.status(404).json({ error: "Grade not found" });
+        }
+      }
+
+      // Update fields
+      Object.assign(section, updates);
+      await section.save();
+
+      res.json({
+        message: "Section updated successfully",
+        section
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Delete (deactivate) section
+   * DELETE /api/sections/:id
+   */
+  static async deleteSection(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+
+      const section = await SectionModel.findOne({
+        _id: id,
+        is_active: true
+      });
+
+      if (!section) {
+        return res.status(404).json({ error: "Section not found" });
+      }
+
+      // Soft delete - set is_active to false
+      section.is_active = false;
+      await section.save();
+
+      res.json({
+        message: "Section deactivated successfully"
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+}
