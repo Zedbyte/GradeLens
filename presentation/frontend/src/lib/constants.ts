@@ -5,6 +5,8 @@ export const ROUTES = {
   STUDENTS: "/students",
   CLASSES: "/classes",
   QUIZZES: "/quizzes",
+  GRADES: "/grades",
+  SECTIONS: "/sections",
 } as const;
 
 export const QUERY_KEYS = {
