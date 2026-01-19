@@ -218,17 +218,14 @@ export class ClassController {
         return res.status(404).json({ error: "Student not found" });
       }
 
-      // Add student to class
+      // Add student to class using instance method
       const studentObjectId = new Types.ObjectId(student_id);
-      if (!classDoc.student_ids.some(sid => sid.equals(studentObjectId))) {
-        classDoc.student_ids.push(studentObjectId);
-        await classDoc.save();
+      await classDoc.addStudent(studentObjectId);
 
-        // Update student's class_ids
-        if (!student.class_ids.some(cid => cid.equals(classDoc._id))) {
-          student.class_ids.push(classDoc._id);
-          await student.save();
-        }
+      // Update student's class_ids
+      if (!student.class_ids.some(cid => cid.equals(classDoc._id))) {
+        student.class_ids.push(classDoc._id);
+        await student.save();
       }
 
       res.json({
@@ -264,12 +261,9 @@ export class ClassController {
         return res.status(404).json({ error: "Student not found" });
       }
 
-      // Remove student from class
+      // Remove student from class using instance method
       const studentObjectId = new Types.ObjectId(studentIdStr);
-      classDoc.student_ids = classDoc.student_ids.filter(
-        sid => !sid.equals(studentObjectId)
-      );
-      await classDoc.save();
+      await classDoc.removeStudent(studentObjectId);
 
       // Update student's class_ids
       student.class_ids = student.class_ids.filter(
