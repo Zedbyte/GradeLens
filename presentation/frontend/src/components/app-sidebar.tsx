@@ -116,19 +116,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="offcanvas" {...props} className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border p-6">
+      <SidebarHeader className="border-b border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               className="hover:bg-transparent active:bg-transparent p-0 h-auto items-start"
             >
-              <a href={ROUTES.DASHBOARD} className="flex flex-col gap-1">
+              <a href={ROUTES.DASHBOARD} className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <IconPhotoSensor className="size-6 text-sidebar-primary shrink-0" style={{ width: '24px', height: '24px' }} />
                   <span className="text-2xl font-bold text-sidebar-primary">GradeLens</span>
                 </div>
-                <p className="text-sm text-sidebar-foreground/60">Assessment Web-Platform</p>
+                {/* <p className="text-sm text-sidebar-foreground/60">Assessment Web-Platform</p> */}
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
