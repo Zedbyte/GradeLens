@@ -336,15 +336,3 @@ def run_detection_pipeline(
             timestamp=datetime.utcnow()
         )
 
-
-# Legacy function for backward compatibility
-def grade_bubbles(scan_id: str, bubbles):
-    """Legacy placeholder function."""
-    logger.warning("Using legacy grade_bubbles function (deprecated)")
-    return {
-        "scan_id": scan_id,
-        "success": False,
-        "confidence": 0.0,
-        "answers": {},
-        "errors": ["Use run_detection_pipeline instead"]
-    }
