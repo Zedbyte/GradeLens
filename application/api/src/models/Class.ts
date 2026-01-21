@@ -28,21 +28,15 @@ export interface IClass {
   updated_at?: Date;
 }
 
-// Instance methods interface
-export interface IClassMethods {
-  addStudent(student_id: Types.ObjectId): Promise<this>;
-  removeStudent(student_id: Types.ObjectId): Promise<this>;
-}
-
 // Static methods interface
-export interface IClassModel extends Model<IClass, {}, IClassMethods> {
-  findByClassId(class_id: string): Promise<(IClass & IClassMethods) | null>;
-  findByTeacher(teacher_id: string, status?: string): Promise<(IClass & IClassMethods)[]>;
-  findActiveClasses(teacher_id?: string): Promise<(IClass & IClassMethods)[]>;
-  findByAcademicYear(academic_year: string, teacher_id?: string): Promise<(IClass & IClassMethods)[]>;
+export interface IClassModel extends Model<IClass> {
+  findByClassId(class_id: string): Promise<IClass | null>;
+  findByTeacher(teacher_id: string, status?: string): Promise<IClass[]>;
+  findActiveClasses(teacher_id?: string): Promise<IClass[]>;
+  findByAcademicYear(academic_year: string, teacher_id?: string): Promise<IClass[]>;
 }
 
-const ClassSchema = new Schema<IClass, IClassModel, IClassMethods>(
+const ClassSchema = new Schema<IClass, IClassModel>(
   {
     class_id: {
       type: String,
@@ -142,23 +136,6 @@ ClassSchema.statics.findByAcademicYear = function(academic_year: string, teacher
   const query: any = { academic_year };
   if (teacher_id) query.teacher_id = teacher_id;
   return this.find(query).sort({ name: 1 });
-};
-
-// Instance methods
-ClassSchema.methods.addStudent = async function(student_id: Types.ObjectId) {
-  if (!this.student_ids.includes(student_id)) {
-    this.student_ids.push(student_id);
-    await this.save();
-  }
-  return this;
-};
-
-ClassSchema.methods.removeStudent = async function(student_id: Types.ObjectId) {
-  this.student_ids = this.student_ids.filter(
-    (id: any) => !id.equals(student_id)
-  );
-  await this.save();
-  return this;
 };
 
 export const ClassModel = model<IClass, IClassModel>("Class", ClassSchema);

@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
 import { StudentModel } from "../models/Student.ts";
 import type { CreateStudentRequest, UpdateStudentRequest } from "../types/student.types.ts";
+import { ClassStudentSyncService } from "../services/classStudentSync.service.ts";
 
 /**
  * Student Controller
@@ -159,6 +161,9 @@ export class StudentController {
       if (!student) {
         return res.status(404).json({ error: "Student not found" });
       }
+
+      // Remove student from all classes before deactivating
+      await ClassStudentSyncService.removeStudentFromAllClasses(student._id);
 
       // Soft delete - set status to inactive
       student.status = "inactive";

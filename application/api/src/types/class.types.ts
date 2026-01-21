@@ -44,9 +44,11 @@ export interface UpdateClassRequest {
   name?: string;
   description?: string;
   academic_year?: string;
-  section?: string;
+  grade_id?: string;
+  section_id?: string;
   subject?: string;
   status?: "active" | "archived" | "completed";
+  student_ids?: string[];  // Allow updating student list
   metadata?: {
     schedule?: string;
     room?: string;

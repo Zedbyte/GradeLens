@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { StudentSelector } from "./StudentSelector";
 import type { Class } from "../types/classes.types";
 import type { Grade } from "@/features/grades/types/grades.types";
 import type { Section } from "@/features/sections/types/sections.types";
@@ -26,6 +27,7 @@ const classSchema = z.object({
   section_id: z.string().optional(),
   subject: z.string().optional(),
   status: z.enum(["active", "completed", "archived"]),
+  student_ids: z.array(z.string()).optional(),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -49,12 +51,17 @@ export function ClassFormDialog({
   grades,
   sections,
 }: ClassFormDialogProps) {
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [selectedGradeId, setSelectedGradeId] = useState<string>("");
+  const [selectedSectionId, setSelectedSectionId] = useState<string>("");
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
     setValue,
+    watch,
   } = useForm<ClassFormData>({
     resolver: zodResolver(classSchema),
     defaultValues: {
@@ -71,6 +78,9 @@ export function ClassFormDialog({
       setValue("section_id", classData.section_id || "");
       setValue("subject", classData.subject || "");
       setValue("status", classData.status);
+      setSelectedGradeId(classData.grade_id || "");
+      setSelectedSectionId(classData.section_id || "");
+      setSelectedStudentIds(classData.student_ids || []);
     } else {
       reset({
         class_id: "",
@@ -81,8 +91,43 @@ export function ClassFormDialog({
         subject: "",
         status: "active",
       });
+      setSelectedGradeId("");
+      setSelectedSectionId("");
+      setSelectedStudentIds([]);
     }
   }, [classData, mode, setValue, reset]);
+
+  // Watch grade and section changes
+  const gradeId = watch("grade_id");
+  const sectionId = watch("section_id");
+
+  useEffect(() => {
+    setSelectedGradeId(gradeId || "");
+  }, [gradeId]);
+
+  useEffect(() => {
+    setSelectedSectionId(sectionId || "");
+  }, [sectionId]);
+
+  const handleStudentToggle = (studentId: string) => {
+    setSelectedStudentIds((prev) =>
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const handleSelectAll = (studentIds: string[]) => {
+    setSelectedStudentIds((prev) => {
+      // Add all student IDs that aren't already selected
+      const newIds = studentIds.filter((id) => !prev.includes(id));
+      return [...prev, ...newIds];
+    });
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedStudentIds([]);
+  };
 
   const onSubmitForm = async (data: ClassFormData) => {
     // Remove empty grade_id and section_id
@@ -90,17 +135,21 @@ export function ClassFormDialog({
       ...data,
       grade_id: data.grade_id || undefined,
       section_id: data.section_id || undefined,
+      student_ids: selectedStudentIds.length > 0 ? selectedStudentIds : undefined,
     };
     const success = await onSubmit(cleanData);
     if (success) {
       reset();
+      setSelectedStudentIds([]);
+      setSelectedGradeId("");
+      setSelectedSectionId("");
       onOpenChange(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-225">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Create Class" : "Edit Class"}</DialogTitle>
           <DialogDescription>
@@ -111,6 +160,9 @@ export function ClassFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Left Column - Class Information */}
+          <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="class_id">
               Class ID <span className="text-destructive">*</span>
@@ -219,7 +271,25 @@ export function ClassFormDialog({
               </select>
             </div>
           </div>
+          </div>
 
+          {/* Right Column - Student Selection */}
+          <div className="rounded-lg border p-4">        
+            <div className="mb-3 flex items-center gap-2">
+              <h4 className="text-sm font-medium">Add Students</h4>
+              <Badge variant="outline">Optional</Badge>
+            </div>
+            <StudentSelector
+              gradeId={selectedGradeId}
+              sectionId={selectedSectionId}
+              selectedStudentIds={selectedStudentIds}
+              onStudentToggle={handleStudentToggle}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+            />
+          </div>
+
+          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

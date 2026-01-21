@@ -67,21 +67,21 @@ export const classesApi = {
   },
 
   /**
-   * Add student to class
+   * Add student to class (DEPRECATED): Now using ClassStudentSyncService in backend
    */
-  async addStudent(
-    classId: string,
-    studentId: string
-  ): Promise<{ message: string; class: Class }> {
-    const { data } = await api.post(`/classes/${classId}/students`, { student_id: studentId });
-    return data;
-  },
+  // async addStudent(
+  //   classId: string,
+  //   studentId: string
+  // ): Promise<{ message: string; class: Class }> {
+  //   const { data } = await api.post(`/classes/${classId}/students`, { student_id: studentId });
+  //   return data;
+  // },
 
   /**
-   * Remove student from class
+   * Remove student from class (DEPRECATED): Now using ClassStudentSyncService in backend
    */
-  async removeStudent(classId: string, studentId: string): Promise<{ message: string }> {
-    const { data } = await api.delete(`/classes/${classId}/students/${studentId}`);
-    return data;
-  },
+  // async removeStudent(classId: string, studentId: string): Promise<{ message: string }> {
+  //   const { data } = await api.delete(`/classes/${classId}/students/${studentId}`);
+  //   return data;
+  // },
 };

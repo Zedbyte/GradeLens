@@ -92,37 +92,39 @@ export function useClasses() {
     }
   }, [loadClasses]);
 
-  const addStudent = useCallback(async (classId: string, studentId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await classesApi.addStudent(classId, studentId);
-      await loadClass(classId, true);
-      return true;
-    } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to add student");
-      console.error("Failed to add student:", err);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [loadClass]);
+  // (DEPRECATED): Now using ClassStudentSyncService in backend
+  // const addStudent = useCallback(async (classId: string, studentId: string) => {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     await classesApi.addStudent(classId, studentId);
+  //     await loadClass(classId, true);
+  //     return true;
+  //   } catch (err: unknown) {
+  //     setError(getErrorMessage(err) || "Failed to add student");
+  //     console.error("Failed to add student:", err);
+  //     return false;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [loadClass]);
 
-  const removeStudent = useCallback(async (classId: string, studentId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await classesApi.removeStudent(classId, studentId);
-      await loadClass(classId, true);
-      return true;
-    } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to remove student");
-      console.error("Failed to remove student:", err);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [loadClass]);
+  // (DEPRECATED): Now using ClassStudentSyncService in backend
+  // const removeStudent = useCallback(async (classId: string, studentId: string) => {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     await classesApi.removeStudent(classId, studentId);
+  //     await loadClass(classId, true);
+  //     return true;
+  //   } catch (err: unknown) {
+  //     setError(getErrorMessage(err) || "Failed to remove student");
+  //     console.error("Failed to remove student:", err);
+  //     return false;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [loadClass]);
 
   return {
     classes,
@@ -135,7 +137,7 @@ export function useClasses() {
     createClass,
     updateClass,
     deleteClass,
-    addStudent,
-    removeStudent,
+    // addStudent,
+    // removeStudent,
   };
 }

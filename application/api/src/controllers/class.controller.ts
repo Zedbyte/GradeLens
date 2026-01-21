@@ -3,6 +3,7 @@ import { ClassModel } from "../models/Class.ts";
 import { StudentModel } from "../models/Student.ts";
 import type { CreateClassRequest, UpdateClassRequest } from "../types/class.types.ts";
 import { Types } from "mongoose";
+import { ClassStudentSyncService } from "../services/classStudentSync.service.ts";
 
 /**
  * Class Controller
@@ -34,17 +35,17 @@ export class ClassController {
         teacher_id: userId,
         created_by: userId,
         status: "active",
-        student_ids: data.student_ids || []
+        student_ids: []  // Initialize empty, will be added via sync service
       });
 
       await classDoc.save();
 
-      // Update students' class_ids
+      // Add students using sync service (maintains bidirectional relationship)
       if (data.student_ids && data.student_ids.length > 0) {
-        await StudentModel.updateMany(
-          { _id: { $in: data.student_ids } },
-          { $addToSet: { class_ids: classDoc._id } }
+        const studentObjectIds = data.student_ids.map(id => 
+          typeof id === 'string' ? new Types.ObjectId(id) : id
         );
+        await ClassStudentSyncService.addStudentsToClass(classDoc._id, studentObjectIds);
       }
 
       res.status(201).json({
@@ -81,8 +82,7 @@ export class ClassController {
         ClassModel.find(query)
           .sort({ academic_year: -1, name: 1 })
           .skip(skip)
-          .limit(Number(limit))
-          .lean(),
+          .limit(Number(limit)),
         ClassModel.countDocuments(query)
       ]);
 
@@ -148,13 +148,36 @@ export class ClassController {
         return res.status(404).json({ error: "Class not found" });
       }
 
-      // Update fields
+      // If student_ids are being updated, use sync service
+      if (updates.student_ids) {
+        // Convert string IDs to ObjectIds
+        const studentObjectIds = updates.student_ids.map(id => 
+          typeof id === 'string' ? new Types.ObjectId(id) : id
+        );
+        
+        const result = await ClassStudentSyncService.updateClassStudents(
+          classDoc._id,
+          studentObjectIds
+        );
+        
+        if (!result.success) {
+          return res.status(500).json({ error: result.error });
+        }
+        
+        // Remove student_ids from updates as it's already handled
+        delete updates.student_ids;
+      }
+
+      // Update remaining fields
       Object.assign(classDoc, updates);
       await classDoc.save();
 
+      // Fetch updated class to get current student_ids
+      const updatedClass = await ClassModel.findById(id);
+
       res.json({
         message: "Class updated successfully",
-        class: classDoc
+        class: updatedClass
       });
     } catch (error) {
       next(error);
@@ -178,6 +201,9 @@ export class ClassController {
       if (!classDoc) {
         return res.status(404).json({ error: "Class not found" });
       }
+
+      // Remove class from all students before archiving
+      await ClassStudentSyncService.removeClassFromAllStudents(classDoc._id);
 
       // Soft delete - set status to archived
       classDoc.status = "archived";
@@ -218,19 +244,26 @@ export class ClassController {
         return res.status(404).json({ error: "Student not found" });
       }
 
-      // Add student to class using instance method
-      const studentObjectId = new Types.ObjectId(student_id);
-      await classDoc.addStudent(studentObjectId);
+      // Add student to class using sync service
+      const studentObjectId = typeof student_id === 'string' 
+        ? new Types.ObjectId(student_id) 
+        : student_id;
+      
+      const result = await ClassStudentSyncService.addStudentToClass(
+        classDoc._id,
+        studentObjectId
+      );
 
-      // Update student's class_ids
-      if (!student.class_ids.some(cid => cid.equals(classDoc._id))) {
-        student.class_ids.push(classDoc._id);
-        await student.save();
+      if (!result.success) {
+        return res.status(500).json({ error: result.error });
       }
+
+      // Fetch updated class
+      const updatedClass = await ClassModel.findById(id);
 
       res.json({
         message: "Student added to class successfully",
-        class: classDoc
+        class: updatedClass
       });
     } catch (error) {
       next(error);
@@ -261,15 +294,19 @@ export class ClassController {
         return res.status(404).json({ error: "Student not found" });
       }
 
-      // Remove student from class using instance method
-      const studentObjectId = new Types.ObjectId(studentIdStr);
-      await classDoc.removeStudent(studentObjectId);
-
-      // Update student's class_ids
-      student.class_ids = student.class_ids.filter(
-        cid => !cid.equals(classDoc._id)
+      // Remove student from class using sync service
+      const studentObjectId = typeof studentIdStr === 'string'
+        ? new Types.ObjectId(studentIdStr)
+        : studentIdStr;
+      
+      const result = await ClassStudentSyncService.removeStudentFromClass(
+        classDoc._id,
+        studentObjectId
       );
-      await student.save();
+
+      if (!result.success) {
+        return res.status(500).json({ error: result.error });
+      }
 
       res.json({
         message: "Student removed from class successfully"

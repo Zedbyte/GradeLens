@@ -17,7 +17,9 @@ router.delete(`${API_ROUTES.CLASSES.BASE}/:id`, ClassController.deleteClass);
 
 // Student management
 router.get(`${API_ROUTES.CLASSES.BASE}/:id/students`, ClassController.getClassStudents);
-router.post(`${API_ROUTES.CLASSES.BASE}/:id/students`, ClassController.addStudent);
-router.delete(`${API_ROUTES.CLASSES.BASE}/:id/students/:studentId`, ClassController.removeStudent);
+
+// (DEPRECATED): Now using ClassStudentSyncService in backend
+// router.post(`${API_ROUTES.CLASSES.BASE}/:id/students`, ClassController.addStudent);
+// router.delete(`${API_ROUTES.CLASSES.BASE}/:id/students/:studentId`, ClassController.removeStudent);
 
 export default router;
