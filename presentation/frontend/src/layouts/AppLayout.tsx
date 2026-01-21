@@ -14,9 +14,6 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="border-b">
             <div className="flex h-14 items-center px-4">
                 <SidebarTrigger />
-                <div className="ml-auto flex items-center space-x-4">
-                    GradeLens
-                </div>
             </div>
             </div>
             <div className="flex-1">

@@ -4,21 +4,21 @@ import * as React from "react"
 import {
   IconDashboard,
   IconCamera,
-  IconHelp,
-  IconInnerShadowTop,
-  IconSearch,
-  IconSettings,
+  // IconHelp,
+  // IconSearch,
+  // IconSettings,
   IconWallpaper,
   IconFileAnalytics,
   IconUser,
   IconCategoryPlus,
   IconSchool,
   IconCategory,
+  IconPhotoSensor,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main.tsx"
 // import { NavDocuments } from "@/components/nav-documents.tsx"
-import { NavSecondary } from "@/components/nav-secondary.tsx"
+// import { NavSecondary } from "@/components/nav-secondary.tsx"
 import { NavUser } from "@/components/nav-user.tsx"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { ROUTES } from "@/lib/constants"
@@ -80,23 +80,23 @@ const navMain = [
   },
 ]
 
-const navSecondary = [
-  {
-    title: "Settings",
-    url: "#",
-    icon: IconSettings,
-  },
-  {
-    title: "Get Help",
-    url: "#",
-    icon: IconHelp,
-  },
-  {
-    title: "Search",
-    url: "#",
-    icon: IconSearch,
-  },
-]
+// const navSecondary = [
+//   {
+//     title: "Settings",
+//     url: "#",
+//     icon: IconSettings,
+//   },
+//   {
+//     title: "Get Help",
+//     url: "#",
+//     icon: IconHelp,
+//   },
+//   {
+//     title: "Search",
+//     url: "#",
+//     icon: IconSearch,
+//   },
+// ]
 
 // const documents = [
 //   {
@@ -115,17 +115,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="offcanvas" {...props} className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="border-b border-sidebar-border p-6">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              className="hover:bg-transparent active:bg-transparent p-0 h-auto items-start"
             >
-              <a href={ROUTES.DASHBOARD}>
-                <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">GradeLens</span>
+              <a href={ROUTES.DASHBOARD} className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <IconPhotoSensor className="size-6 text-sidebar-primary shrink-0" style={{ width: '24px', height: '24px' }} />
+                  <span className="text-2xl font-bold text-sidebar-primary">GradeLens</span>
+                </div>
+                <p className="text-sm text-sidebar-foreground/60">Assessment Web-Platform</p>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -134,7 +137,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={navMain} />
         {/* <NavDocuments items={documents} /> */}
-        <NavSecondary items={navSecondary} className="mt-auto" />
+        {/* <NavSecondary items={navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={{
