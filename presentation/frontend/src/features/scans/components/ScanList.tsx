@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import type { Scan } from "../types/scans.types"
 
 export function ScanList({
   scans,
   onSelect
 }: {
-  scans: any[]
+  scans: Scan[]
   onSelect: (id: string) => void
 }) {
   return (
