@@ -37,7 +37,7 @@ const RefreshTokenSchema = new Schema<RefreshToken>(
     tokenHash: {
       type: String,
       required: true,
-      index: true, // critical for refresh lookup
+      // index defined at schema level below
     },
     createdAt: {
       type: Date,

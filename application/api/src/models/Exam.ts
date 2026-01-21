@@ -57,8 +57,8 @@ const ExamSchema = new Schema(
     
     // Quiz/Exam scheduling
     scheduled_date: {
-      type: Date,
-      index: true
+      type: Date
+      // index defined at schema level below
     },
     due_date: {
       type: Date
