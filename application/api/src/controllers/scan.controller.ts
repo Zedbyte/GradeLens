@@ -11,15 +11,36 @@ if (!fs.existsSync(STORAGE_DIR)) {
 }
 
 export async function uploadScan(req: Request, res: Response) {
-  const scan_id = uuid();
-  const filename = `${scan_id}.jpg`;
-  const filePath = path.join(STORAGE_DIR, filename);
+  try {
+    const { image, exam_id, student_id } = req.body;
 
-  fs.writeFileSync(filePath, req.body.image, "base64");
+    console.log(image, exam_id, student_id);
 
-  const scan = await createScan(scan_id, filename);
+    if (!image) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+    if (!exam_id) {
+      return res.status(400).json({ error: "exam_id is required" });
+    }
+    if (!student_id) {
+      return res.status(400).json({ error: "student_id is required" });
+    }
 
-  res.status(202).json(scan);
+    const scan_id = uuid();
+    const filename = `${scan_id}.jpg`;
+    const filePath = path.join(STORAGE_DIR, filename);
+
+    fs.writeFileSync(filePath, image, "base64");
+
+    const scan = await createScan(scan_id, filename, exam_id, student_id);
+
+    res.status(202).json(scan);
+  } catch (error) {
+    console.error("Upload scan error:", error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Failed to upload scan" 
+    });
+  }
 }
 
 export async function getScans(req: Request, res: Response) {

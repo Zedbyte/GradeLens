@@ -9,21 +9,42 @@ export type ScanStatus =
   | "failed"
   | "error";
 
-export interface ScanLog {
-  timestamp: string;
-  level: "info" | "warn" | "error";
+export interface QuestionDetection {
+  question_id: number;
+  fill_ratios: Record<string, number>;
+  selected: string[];
+  detection_status: "answered" | "unanswered" | "ambiguous" | "error";
+  confidence?: number;
+}
+
+export interface QualityMetrics {
+  blur_score?: number;
+  brightness_mean?: number;
+  brightness_std?: number;
+  skew_angle?: number;
+  perspective_correction_applied?: boolean;
+}
+
+export interface DetectionWarning {
+  code: string;
   message: string;
-  data?: unknown;
+  question_id?: number;
+}
+
+export interface DetectionError {
+  code: string;
+  message: string;
+  stage?: string;
 }
 
 export interface DetectionResult {
-  status: string;
-  detections?: unknown[];
+  status: "success" | "failed" | "needs_review";
+  detections: QuestionDetection[];
+  quality_metrics?: QualityMetrics;
+  warnings: DetectionWarning[];
+  errors: DetectionError[];
   processing_time_ms?: number;
-  errors?: Array<{
-    message: string;
-    code?: string;
-  }>;
+  timestamp?: string;
 }
 
 export interface GradingResult {
@@ -31,7 +52,20 @@ export interface GradingResult {
   score?: number;
   correct_answers?: number;
   total_questions?: number;
-  answers?: unknown[];
+  percentage?: number;
+  answers?: Array<{
+    question_id: number;
+    student_answer: string[];
+    correct_answer: string[];
+    is_correct: boolean;
+  }>;
+}
+
+export interface ScanLog {
+  timestamp: string;
+  level: "info" | "warn" | "error";
+  message: string;
+  data?: unknown;
 }
 
 export interface Scan {
@@ -55,10 +89,6 @@ export interface Scan {
   // Results
   detection_result?: DetectionResult | null;
   grading_result?: GradingResult | null;
-  
-  // Legacy fields
-  confidence?: number;
-  results?: unknown;
   
   // Error tracking
   error_message?: string;
@@ -91,9 +121,14 @@ export interface Scan {
 
 export interface UploadScanRequest {
   image: string; // base64
+  exam_id: string;      // Quiz/Exam ID
+  student_id: string;   // Student ID
 }
 
 export interface UploadScanResponse {
   scan_id: string;
   status: string;
+  exam_id: string;
+  student_id: string;
+  template_id: string;
 }

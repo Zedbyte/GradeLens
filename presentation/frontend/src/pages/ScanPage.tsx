@@ -9,7 +9,8 @@ import { useSections } from "@/features/sections/hooks/useSections";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
 import { useStudents } from "@/features/students/hooks/useStudents";
-import { fetchScansApi, fetchScanApi } from "../features/scans/api/scans.api";
+import { fetchScansApi } from "../features/scans/api/scans.api";
+import { useScanPolling } from "../features/scans/hooks/useScanPolling";
 import { UploadForm } from "../features/scans/components/UploadForm";
 import { ScanFilters } from "../features/scans/components/ScanFilters";
 import { AssessmentSelection } from "../features/scans/components/AssessmentSelection";
@@ -27,8 +28,14 @@ export function ScanPage() {
   const [selectedQuiz, setSelectedQuiz] = useState<string>("");
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [scans, setScans] = useState<Scan[]>([]);
-  const [selectedScan, setSelectedScan] = useState<Scan>();
+  const [selectedScanId, setSelectedScanId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("upload");
+
+  // Poll selected scan for updates
+  const { scan: selectedScan } = useScanPolling(
+    selectedScanId,
+    !!selectedScanId // Enable polling when scan is selected
+  );
 
   // Load data
   const { grades, loadGrades } = useGrades();
@@ -50,8 +57,8 @@ export function ScanPage() {
     setScans(await fetchScansApi());
   }
 
-  async function selectScan(id: string) {
-    setSelectedScan(await fetchScanApi(id));
+  function selectScan(scanId: string) {
+    setSelectedScanId(scanId); // Polling hook will handle fetching
   }
 
   // Filter sections by selected grade
@@ -195,7 +202,14 @@ export function ScanPage() {
               </TabsContent>
 
               <TabsContent value="upload" className="py-4">
-                <UploadForm onUploaded={loadScans} />
+                <UploadForm 
+                  onUploaded={(scanId) => {
+                    loadScans();
+                    selectScan(scanId);
+                  }}
+                  selectedQuiz={selectedQuiz}
+                  selectedStudent={selectedStudent}
+                />
               </TabsContent>
 
               <TabsContent value="manual" className="space-y-4 py-4">
