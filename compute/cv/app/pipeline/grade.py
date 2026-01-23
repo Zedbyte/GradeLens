@@ -93,7 +93,8 @@ def run_detection_pipeline(
                 image_path,
                 apply_clahe=True,
                 check_quality=True,
-                min_blur_score=80.0 if strict_quality else 50.0
+                min_blur_score=80.0 if strict_quality else 50.0,
+                binarization="auto"  # Auto-select Otsu or Adaptive based on lighting
             )
             
             quality_metrics = {

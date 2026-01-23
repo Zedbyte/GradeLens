@@ -97,6 +97,10 @@ class TemplateLoader:
             for p in self.templates_dir.glob("*.json")
         ]
     
+    def list_templates(self) -> list[str]:
+        """Alias for list_available for API consistency."""
+        return self.list_available()
+    
     def clear_cache(self):
         """Clear template cache (useful for hot-reloading during development)."""
         self._cache.clear()
