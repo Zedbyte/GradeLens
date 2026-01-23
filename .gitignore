@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 **/compute/cv/tests/fixtures/images/*.png
 **/compute/cv/tests/output
+**/compute/cv/tests/fixtures/images/*.png
+**/compute/cv/tests/fixtures/images/*.jpg
+**/compute/cv/tests/fixtures/*.png
+**/compute/cv/tests/fixtures/*.jpg
