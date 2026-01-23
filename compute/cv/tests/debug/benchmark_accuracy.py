@@ -244,13 +244,31 @@ class AccuracyBenchmark:
             template = load_template(self.template_id)
             preprocessed, _ = preprocess_image(str(image_path))
             
-            # Detect and correct perspective
-            boundary = detect_paper_boundary(preprocessed)
-            corrected = correct_perspective(
-                preprocessed,
-                boundary,
-                (template.canonical_size.width, template.canonical_size.height)
-            )
+            # Try to detect and correct perspective
+            try:
+                boundary = detect_paper_boundary(preprocessed)
+                if boundary is not None:
+                    corrected = correct_perspective(
+                        preprocessed,
+                        boundary,
+                        (template.canonical_size.width, template.canonical_size.height)
+                    )
+                else:
+                    boundary = None
+            except Exception as e:
+                logger.debug(f"  Paper detection error: {e}")
+                boundary = None
+            
+            # Fallback: For synthetic test forms without borders, use image as-is
+            if boundary is None:
+                logger.info(f"  Paper detection failed (no border), using image as-is for debug visualization")
+                target_size = (template.canonical_size.width, template.canonical_size.height)
+                
+                # Resize to canonical size if needed
+                if preprocessed.shape[:2][::-1] != target_size:
+                    corrected = cv2.resize(preprocessed, target_size)
+                else:
+                    corrected = preprocessed
             
             if corrected is None:
                 logger.warning(f"  Could not create debug visualization for {image_path.name}")
@@ -279,11 +297,38 @@ class AccuracyBenchmark:
             # Extract expected mark positions from template
             expected_marks = [(mark.position.x, mark.position.y) for mark in template.registration_marks]
             
-            # Draw expected marks (blue circles)
+            # Draw expected marks (blue squares with labels)
             for i, (x, y) in enumerate(expected_marks):
-                cv2.circle(vis_img, (x, y), 20, (255, 0, 0), 2)  # Blue outline
-                cv2.putText(vis_img, f"E{i+1}", (x-10, y-30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+                mark = template.registration_marks[i]
+                # Draw larger search area (light blue)
+                img_height = vis_img.shape[0]
+                img_center_y = img_height / 2
+                distance_from_center_y = abs(y - img_center_y)
+                radius_multiplier = 1.0 + (distance_from_center_y / img_center_y) * 1.0
+                search_radius = int(50 * radius_multiplier)
+                
+                cv2.rectangle(
+                    vis_img, 
+                    (x - search_radius, y - search_radius),
+                    (x + search_radius, y + search_radius),
+                    (255, 200, 0), 1  # Light blue search area
+                )
+                
+                # Draw expected position (blue circle/square)
+                if mark.type == "circle":
+                    cv2.circle(vis_img, (x, y), 20, (255, 0, 0), 2)  # Blue outline
+                else:  # square
+                    half_size = mark.size // 2
+                    cv2.rectangle(
+                        vis_img,
+                        (x - half_size, y - half_size),
+                        (x + half_size, y + half_size),
+                        (255, 0, 0), 2
+                    )
+                
+                # Label
+                cv2.putText(vis_img, f"{mark.id}", (x-40, y-30), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
             
             # Draw bubble ROI boxes for each question
             for detection in result.detections:

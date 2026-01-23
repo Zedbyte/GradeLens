@@ -128,29 +128,37 @@ class TestFormGenerator:
         # Create white background
         form = np.ones((height, width), dtype=np.uint8) * 255
         
-        # Add border
-        cv2.rectangle(form, (50, 50), (width - 50, height - 50), 0, 2)
+        # Don't draw border - it interferes with corner registration marks
+        # If border is needed, it should be drawn AFTER marks or much further in
         
         # Add header
-        cv2.putText(form, "SAMPLE EXAM FORM", (width // 2 - 200, 120),
+        cv2.putText(form, "SAMPLE EXAM FORM", (width // 2 - 200, 150),
                     cv2.FONT_HERSHEY_SIMPLEX, 1.2, 0, 2)
         
         return form
     
     def _add_registration_marks(self, form: np.ndarray) -> np.ndarray:
-        """Draw registration marks."""
+        """
+        Draw registration marks at exact positions specified in template.
+        
+        The template coordinates represent the CENTER of each mark.
+        For squares, we draw them centered at (x, y) with the specified size.
+        """
         for mark in self.template.registration_marks:
             x, y = mark.position.x, mark.position.y
             
             if mark.type == "circle":
-                # Filled circle
+                # Filled black circle centered at (x, y)
                 cv2.circle(form, (x, y), mark.size, 0, -1)
-                # Outer circle
-                cv2.circle(form, (x, y), mark.size + 3, 0, 2)
+                
             elif mark.type == "square":
+                # Calculate square bounds centered at (x, y)
                 half = mark.size // 2
-                cv2.rectangle(form, (x - half, y - half), 
-                            (x + half, y + half), 0, -1)
+                x1, y1 = x - half, y - half
+                x2, y2 = x + half, y + half
+                
+                # Draw filled black square (no border to avoid detection issues)
+                cv2.rectangle(form, (x1, y1), (x2, y2), 0, -1)
         
         return form
     
