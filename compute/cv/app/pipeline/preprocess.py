@@ -4,7 +4,7 @@ Normalizes and enhances image quality before main CV processing.
 """
 import cv2
 import numpy as np
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional, Union, overload
 from loguru import logger
 
 from app.utils.image_utils import (
@@ -20,42 +20,49 @@ class PreprocessingError(Exception):
 
 
 def preprocess_image(
-    image_path: str,
+    image: Union[str, np.ndarray],
     apply_clahe: bool = True,
     check_quality: bool = True,
-    min_blur_score: float = 100.0
-) -> Tuple[np.ndarray, Dict[str, float]]:
+    min_blur_score: float = 100.0,
+    return_intermediates: bool = False,
+    binarization: str = "auto"  # "auto", "otsu", "adaptive", "none"
+) -> Union[Tuple[np.ndarray, Dict[str, float]], Tuple[np.ndarray, Dict[str, float], Dict[str, np.ndarray]]]:
     """
-    Preprocess image with quality checks.
+    Preprocess image with quality checks and adaptive thresholding.
     
     Steps:
-    1. Load image
+    1. Load image (if path) or use numpy array
     2. Convert to grayscale
     3. Measure quality metrics (blur, brightness)
     4. Apply CLAHE for contrast enhancement
-    5. Apply Gaussian blur for noise reduction
+    5. Apply binarization (Otsu or Adaptive Threshold)
+    6. Optional: Gaussian blur for noise reduction
     
     Args:
-        image_path: Path to image file
+        image: File path (str) or BGR image as numpy array
         apply_clahe: Whether to apply CLAHE contrast enhancement
         check_quality: Whether to perform quality checks
         min_blur_score: Minimum acceptable blur score
+        return_intermediates: Return intermediate processing stages
+        binarization: Thresholding method ("auto", "otsu", "adaptive", "none")
         
     Returns:
-        (processed_image, quality_metrics)
+        If return_intermediates=False: (processed_image, quality_metrics)
+        If return_intermediates=True: (processed_image, quality_metrics, intermediates_dict)
         
     Raises:
-        PreprocessingError: If image cannot be loaded or quality is too poor
+        PreprocessingError: If image is invalid or quality is too poor
     """
-    # Load image
-    image = cv2.imread(image_path)
+    # Load image if path provided
+    if isinstance(image, str):
+        loaded_image = cv2.imread(image)
+        if loaded_image is None:
+            raise PreprocessingError(f"Failed to load image: {image}")
+        image = loaded_image
+    elif image is None or not isinstance(image, np.ndarray):
+        raise PreprocessingError("Invalid image: expected file path or numpy array")
     
-    if image is None:
-        raise PreprocessingError(
-            f"Failed to decode image (invalid or corrupt): {image_path}"
-        )
-    
-    logger.debug(f"Loaded image: {image.shape}")
+    logger.debug(f"Processing image array: {image.shape}")
     
     # Convert to grayscale
     if len(image.shape) == 3:
@@ -84,10 +91,10 @@ def preprocess_image(
             f"skew={skew_angle:.2f}°"
         )
         
-        # Quality checks
+        # Quality checks (warnings only, don't fail for live preview)
         if blur_score < min_blur_score:
-            raise PreprocessingError(
-                f"Image too blurry: blur_score={blur_score:.1f} < {min_blur_score}"
+            logger.warning(
+                f"Image blurry: blur_score={blur_score:.1f} < {min_blur_score}"
             )
         
         if brightness_mean < 50:
@@ -100,18 +107,58 @@ def preprocess_image(
     
     # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
     if apply_clahe:
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
-        logger.debug("CLAHE applied")
+        logger.debug("CLAHE applied (clipLimit=3.0)")
     else:
         enhanced = gray
     
-    # Apply Gaussian blur for noise reduction
-    blurred = cv2.GaussianBlur(enhanced, (5, 5), 0)
+    # Determine best binarization method
+    if binarization == "auto":
+        # Use brightness std to decide: low std = uneven lighting = adaptive
+        brightness_std = quality_metrics.get("brightness_std", 50)
+        if brightness_std < 40:  # Low contrast/uneven lighting
+            binarization = "adaptive"
+            logger.debug(f"Auto-selected adaptive threshold (std={brightness_std:.1f})")
+        else:
+            binarization = "otsu"
+            logger.debug(f"Auto-selected Otsu threshold (std={brightness_std:.1f})")
     
-    logger.success("Preprocessing complete")
+    # Apply binarization for better mark detection
+    if binarization == "otsu":
+        _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        logger.debug("Otsu binarization applied")
+        processed = binary
+    elif binarization == "adaptive":
+        # Adaptive Gaussian threshold - better for uneven lighting
+        binary = cv2.adaptiveThreshold(
+            enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY, blockSize=21, C=10
+        )
+        logger.debug("Adaptive Gaussian threshold applied (blockSize=21, C=10)")
+        processed = binary
+    else:  # "none" - just use enhanced (grayscale)
+        # Light Gaussian blur for noise reduction only
+        processed = cv2.GaussianBlur(enhanced, (3, 3), 0)
+        logger.debug("No binarization (grayscale with light blur)")
     
-    return blurred, quality_metrics
+    logger.success(f"Preprocessing complete (method={binarization})")
+    
+    # Return intermediate stages if requested
+    if return_intermediates:
+        intermediates = {
+            'grayscale': gray,
+            'clahe': enhanced if apply_clahe else None,
+            'binary': processed if binarization != "none" else None,
+            'final': processed
+        }
+        return processed, quality_metrics, intermediates
+    
+    return processed, quality_metrics
+
+
+# Backward compatibility alias
+preprocess_image_array = preprocess_image
 
 
 def normalize_brightness(
