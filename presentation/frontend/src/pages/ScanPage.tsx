@@ -86,17 +86,8 @@ export function ScanPage() {
     return true;
   });
 
-  // console.log(selectedGrade, selectedSection, selectedClass);
-  // console.log(students);
-
-  
-  
-  
-  
-
   // Find selected quiz details
   const quizDetails = quizzes.find(q => q._id === selectedQuiz);
-  // const studentDetails = students.find(s => s._id === selectedStudent);
   const selectedScanDetails = selectedScan ? {
     quiz: quizzes.find(q => q._id === selectedScan.exam_id),
     student: students.find(s => s._id === selectedScan.student_id),
