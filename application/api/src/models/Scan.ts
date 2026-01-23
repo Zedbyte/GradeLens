@@ -96,16 +96,6 @@ const ScanSchema = new Schema(
       default: null
     },
     
-    // Legacy fields (for backward compatibility)
-    confidence: { 
-      type: Number,
-      min: 0,
-      max: 1
-    },
-    results: { 
-      type: Schema.Types.Mixed 
-    },
-    
     // Error tracking
     error_message: { 
       type: String 
