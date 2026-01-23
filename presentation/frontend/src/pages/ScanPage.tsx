@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,22 +50,39 @@ export function ScanPage() {
   const selectedQuizDetails = quizzes.find(q => q._id === selectedQuiz);
   const { template } = useTemplate(selectedQuizDetails?.template_id);
 
-  async function loadScans() {
+  const loadScans = useCallback(async () => {
     setScans(await fetchScansApi());
-  }
+  }, []);
 
   function selectScan(scanId: string) {
     setSelectedScanId(scanId); // Polling hook will handle fetching
   }
 
+  // Load initial data once on mount
+  // Using useRef to ensure functions are called only once and avoid dependency issues
+  const initialLoadRef = useRef(false);
+  
   useEffect(() => {
-    loadGrades();
-    loadSections();
-    loadClasses();
-    loadQuizzes();
-    loadStudents();
-    loadScans();
-  }, [loadGrades, loadSections, loadClasses, loadQuizzes, loadStudents]);
+    // Prevent double execution in React StrictMode during development
+    if (initialLoadRef.current) return;
+    initialLoadRef.current = true;
+
+    // Load all initial data
+    const loadInitialData = async () => {
+      await Promise.all([
+        loadGrades(),
+        loadSections(),
+        loadClasses(),
+        loadQuizzes(),
+        loadStudents(),
+        loadScans(),
+      ]);
+    };
+
+    loadInitialData();
+    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - load once on mount
 
   // Filter sections by selected grade
   const filteredSections = selectedGrade
