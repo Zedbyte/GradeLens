@@ -11,29 +11,29 @@
       "id": "top_left",
       "position": { "x": 80, "y": 80 },
       "type": "square",
-      "size": 20
+      "size": 40
     },
     {
       "id": "top_right",
       "position": { "x": 2020, "y": 80 },
       "type": "square",
-      "size": 20
+      "size": 40
     },
     {
       "id": "bottom_left",
       "position": { "x": 80, "y": 2890 },
       "type": "square",
-      "size": 20
+      "size": 40
     },
     {
       "id": "bottom_right",
       "position": { "x": 2020, "y": 2890 },
       "type": "square",
-      "size": 20
+      "size": 40
     }
   ],
   "bubble_config": {
-    "radius": 15,
+    "radius": 25,
     "fill_threshold": 0.18,
     "ambiguous_threshold": 0.65
   },
