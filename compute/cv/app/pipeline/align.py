@@ -21,7 +21,8 @@ def detect_registration_marks(
     image: np.ndarray,
     expected_marks: List[RegistrationMark],
     search_radius: int = 50,
-    tolerance: float = 0.3
+    tolerance: float = 0.3,
+    adaptive_search: bool = True
 ) -> List[Tuple[int, int]]:
     """
     Detect registration marks in image.
@@ -31,6 +32,7 @@ def detect_registration_marks(
         expected_marks: List of expected registration marks from template
         search_radius: Radius around expected position to search
         tolerance: How far detected mark can be from expected (as ratio of search_radius)
+        adaptive_search: Use larger search radius for marks further from image center
         
     Returns:
         List of detected (x, y) positions
@@ -39,17 +41,39 @@ def detect_registration_marks(
         AlignmentError: If critical marks cannot be detected
     """
     detected_positions = []
+    img_height, img_width = image.shape[:2]
+    img_center_y = img_height / 2
     
     for mark in expected_marks:
         expected_x = mark.position.x
         expected_y = mark.position.y
         mark_size = mark.size
         
+        # Adaptive search radius: larger for marks far from center (especially bottom marks)
+        # This compensates for cumulative perspective/alignment errors
+        if adaptive_search:
+            distance_from_center_y = abs(expected_y - img_center_y)
+            # Increase search radius by up to 100% for marks at image edges
+            radius_multiplier = 1.0 + (distance_from_center_y / img_center_y) * 1.0
+            adjusted_search_radius = int(search_radius * radius_multiplier)
+            
+            # Also increase tolerance for edge marks
+            adjusted_tolerance = tolerance * radius_multiplier
+            
+            logger.debug(
+                f"Mark '{mark.id}' at y={expected_y}: "
+                f"radius={adjusted_search_radius}px (x{radius_multiplier:.2f}), "
+                f"tolerance={adjusted_tolerance:.2f}"
+            )
+        else:
+            adjusted_search_radius = search_radius
+            adjusted_tolerance = tolerance
+        
         # Extract search region
-        x1 = max(0, expected_x - search_radius)
-        y1 = max(0, expected_y - search_radius)
-        x2 = min(image.shape[1], expected_x + search_radius)
-        y2 = min(image.shape[0], expected_y + search_radius)
+        x1 = max(0, expected_x - adjusted_search_radius)
+        y1 = max(0, expected_y - adjusted_search_radius)
+        x2 = min(image.shape[1], expected_x + adjusted_search_radius)
+        y2 = min(image.shape[0], expected_y + adjusted_search_radius)
         
         roi = image[y1:y2, x1:x2]
         
@@ -69,8 +93,8 @@ def detect_registration_marks(
             
             if circles:
                 # Find closest to expected position
-                roi_center_x = search_radius
-                roi_center_y = search_radius
+                roi_center_x = adjusted_search_radius if expected_x >= adjusted_search_radius else expected_x
+                roi_center_y = adjusted_search_radius if expected_y >= adjusted_search_radius else expected_y
                 
                 best_circle = min(
                     circles,
@@ -83,13 +107,16 @@ def detect_registration_marks(
                 
                 # Validate distance from expected
                 distance = np.sqrt((detected_x - expected_x)**2 + (detected_y - expected_y)**2)
-                max_distance = search_radius * tolerance
+                max_distance = adjusted_search_radius * adjusted_tolerance
                 
                 if distance <= max_distance:
                     detected_positions.append((detected_x, detected_y))
                     logger.debug(f"Mark '{mark.id}' detected at ({detected_x}, {detected_y}), distance={distance:.1f}px")
                 else:
-                    logger.warning(f"Mark '{mark.id}' too far from expected position")
+                    logger.warning(
+                        f"Mark '{mark.id}' too far from expected position "
+                        f"(distance={distance:.1f}px > max={max_distance:.1f}px)"
+                    )
                     detected_positions.append((expected_x, expected_y))
             else:
                 logger.warning(f"Registration mark '{mark.id}' not detected, using expected position")
@@ -102,8 +129,8 @@ def detect_registration_marks(
             
             if contours:
                 # Find square-like contour closest to center
-                roi_center_x = search_radius
-                roi_center_y = search_radius
+                roi_center_x = adjusted_search_radius if expected_x >= adjusted_search_radius else expected_x
+                roi_center_y = adjusted_search_radius if expected_y >= adjusted_search_radius else expected_y
                 
                 best_contour = None
                 best_distance = float('inf')
@@ -112,8 +139,8 @@ def detect_registration_marks(
                     area = cv2.contourArea(contour)
                     expected_area = mark_size * mark_size
                     
-                    # Check if size is reasonable
-                    if 0.5 * expected_area < area < 2.0 * expected_area:
+                    # Check if size is reasonable (more lenient than before)
+                    if 0.3 * expected_area < area < 3.0 * expected_area:
                         center = get_contour_center(contour)
                         distance = np.sqrt((center[0] - roi_center_x)**2 + (center[1] - roi_center_y)**2)
                         
@@ -125,8 +152,23 @@ def detect_registration_marks(
                     center = get_contour_center(best_contour)
                     detected_x = x1 + center[0]
                     detected_y = y1 + center[1]
-                    detected_positions.append((detected_x, detected_y))
-                    logger.debug(f"Mark '{mark.id}' detected at ({detected_x}, {detected_y})")
+                    
+                    # Validate distance
+                    distance = np.sqrt((detected_x - expected_x)**2 + (detected_y - expected_y)**2)
+                    max_distance = adjusted_search_radius * adjusted_tolerance
+                    
+                    if distance <= max_distance:
+                        detected_positions.append((detected_x, detected_y))
+                        logger.debug(
+                            f"Square mark '{mark.id}' detected at ({detected_x}, {detected_y}), "
+                            f"distance={distance:.1f}px"
+                        )
+                    else:
+                        logger.warning(
+                            f"Square mark '{mark.id}' too far (distance={distance:.1f}px > "
+                            f"max={max_distance:.1f}px), using expected"
+                        )
+                        detected_positions.append((expected_x, expected_y))
                 else:
                     logger.warning(f"Square mark '{mark.id}' not detected")
                     detected_positions.append((expected_x, expected_y))
