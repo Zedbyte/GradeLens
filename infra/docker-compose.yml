@@ -63,6 +63,9 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
+    volumes:
+      - ../compute/cv/app:/app/app
+      - ../compute/cv/main.py:/app/main.py
     environment:
       REDIS_URL: redis://redis:6379/0
       DEBUG: "true"

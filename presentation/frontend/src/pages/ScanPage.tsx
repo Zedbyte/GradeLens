@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/immutability */
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,13 +8,16 @@ import { useSections } from "@/features/sections/hooks/useSections";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
 import { useStudents } from "@/features/students/hooks/useStudents";
+import { useTemplate } from "@/hooks/useTemplate";
 import { fetchScansApi } from "../features/scans/api/scans.api";
 import { useScanPolling } from "../features/scans/hooks/useScanPolling";
 import { UploadForm } from "../features/scans/components/UploadForm";
+import { LiveScanner } from "../features/scans/components/LiveScanner";
 import { ScanFilters } from "../features/scans/components/ScanFilters";
 import { AssessmentSelection } from "../features/scans/components/AssessmentSelection";
 import { ScanQueue } from "../features/scans/components/ScanQueue";
 import { ScanDetails } from "../features/scans/components/ScanDetails";
+import { uploadScanApi } from "../features/scans/api/scans.api";
 import type { Scan } from "@/features/scans/types/scans.types";
 
 export function ScanPage() {
@@ -44,14 +46,9 @@ export function ScanPage() {
   const { quizzes, loadQuizzes } = useQuizzes();
   const { students, loadStudents } = useStudents();
 
-  useEffect(() => {
-    loadGrades();
-    loadSections();
-    loadClasses();
-    loadQuizzes();
-    loadStudents();
-    loadScans();
-  }, [loadGrades, loadSections, loadClasses, loadQuizzes, loadStudents]);
+  // Load template based on selected quiz
+  const selectedQuizDetails = quizzes.find(q => q._id === selectedQuiz);
+  const { template } = useTemplate(selectedQuizDetails?.template_id);
 
   async function loadScans() {
     setScans(await fetchScansApi());
@@ -60,6 +57,15 @@ export function ScanPage() {
   function selectScan(scanId: string) {
     setSelectedScanId(scanId); // Polling hook will handle fetching
   }
+
+  useEffect(() => {
+    loadGrades();
+    loadSections();
+    loadClasses();
+    loadQuizzes();
+    loadStudents();
+    loadScans();
+  }, [loadGrades, loadSections, loadClasses, loadQuizzes, loadStudents]);
 
   // Filter sections by selected grade
   const filteredSections = selectedGrade
@@ -96,6 +102,26 @@ export function ScanPage() {
   const handleSaveScan = () => {
     console.log("Saving scan:", selectedScan);
     // TODO: Implement save functionality
+  };
+
+  const handleLiveCapture = async (imageData: string) => {
+    if (!selectedQuiz || !selectedStudent) return;
+
+    try {
+      const result = await uploadScanApi({
+        image: imageData,
+        exam_id: selectedQuiz,
+        student_id: selectedStudent,
+      });
+
+      await loadScans();
+      selectScan(result.scan_id);
+      
+      // Switch to upload tab to show the queue
+      setActiveTab("upload");
+    } catch (error) {
+      console.error("Failed to upload scan:", error);
+    }
   };
 
   return (
@@ -177,19 +203,12 @@ export function ScanPage() {
               </TabsList>
 
               <TabsContent value="scanning" className="space-y-4 py-4">
-                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 space-y-4">
-                  <IconCamera className="h-16 w-16 text-muted-foreground" />
-                  <div className="text-center space-y-2">
-                    <p className="font-medium">Live Scanner Preview</p>
-                    <p className="text-sm text-muted-foreground">
-                      Camera scanning feature coming soon
-                    </p>
-                  </div>
-                  <Button disabled>
-                    <IconCamera className="mr-2 h-4 w-4" />
-                    Start Camera
-                  </Button>
-                </div>
+                <LiveScanner
+                  selectedQuiz={selectedQuiz}
+                  selectedStudent={selectedStudent}
+                  template={template || undefined}
+                  onCapture={handleLiveCapture}
+                />
               </TabsContent>
 
               <TabsContent value="upload" className="py-4">

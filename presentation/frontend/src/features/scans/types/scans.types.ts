@@ -132,3 +132,42 @@ export interface UploadScanResponse {
   student_id: string;
   template_id: string;
 }
+
+// Live scanner preview types
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface QualityFeedback {
+  ready_to_scan: boolean;
+  blur_detected: boolean;
+  too_dark: boolean;
+  too_bright: boolean;
+  skewed: boolean;
+  message: string;
+}
+
+export interface FramePreviewRequest {
+  image: string; // base64-encoded JPEG/PNG
+  template_id: string;
+}
+
+export interface FramePreviewResponse {
+  paper_detected: boolean;
+  marks_detected: number;
+  detected_marks: Position[];
+  paper_corners?: Position[]; // Detected paper boundary corners (for live contour display)
+  quality_score?: number;
+  quality_feedback: QualityFeedback;
+  blur_score?: number;
+  brightness?: number;
+  skew_angle?: number;
+  
+  // Debug images (base64-encoded) - entire pipeline
+  original_image?: string;
+  grayscale_image?: string;
+  clahe_image?: string;
+  preprocessed_image?: string;
+  warped_image?: string;
+}
