@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,14 +15,18 @@ interface ScanDetailsProps {
   quiz?: Quiz;
   student?: Student;
   onSave?: () => void;
+  className?: string;
 }
 
-export function ScanDetails({ scan, quiz, student, onSave }: ScanDetailsProps) {
+export function ScanDetails({ scan, quiz, student, onSave, className }: ScanDetailsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!scan) {
     return (
-      <Card className="border-0 shadow-sm">
+      <Card className={cn(
+        "shadow-sm",
+        className
+      )}>
         <CardContent className="flex min-h-100 items-center justify-center py-12">
           <div className="text-center text-muted-foreground">
             <IconInfoCircle className="mx-auto mb-3 h-12 w-12 opacity-50" />
@@ -223,7 +228,12 @@ export function ScanDetails({ scan, quiz, student, onSave }: ScanDetailsProps) {
   );
 
   return (
-    <Card className="border-0 shadow-sm flex flex-col h-full">
+    <Card
+      className={cn(
+        "shadow-sm flex flex-col h-full",
+        className
+      )}
+    >
       <CardHeader className="border-b bg-muted/30 py-3 shrink-0">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">

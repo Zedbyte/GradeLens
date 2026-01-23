@@ -172,9 +172,9 @@ export function ScanPage() {
       />
 
       {/* Three Column Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_2fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Quiz Selection + Scan Queue */}
-        <div className="space-y-6">
+        <div className="space-y-6 col-span-3">
           {/* Assessment Selection */}
           <AssessmentSelection
             quizzes={quizzes}
@@ -197,7 +197,7 @@ export function ScanPage() {
         </div>
 
         {/* Middle Column: Tabs */}
-        <Card>
+        <Card className="col-span-5 self-start">
           <CardHeader>
             <CardTitle>Scan Input</CardTitle>
             <CardDescription>Choose your preferred input method</CardDescription>
@@ -264,6 +264,7 @@ export function ScanPage() {
           quiz={selectedScanDetails?.quiz}
           student={selectedScanDetails?.student}
           onSave={handleSaveScan}
+          className="col-span-4"
         />
       </div>
     </div>
