@@ -14,8 +14,6 @@ export async function uploadScan(req: Request, res: Response) {
   try {
     const { image, exam_id, student_id } = req.body;
 
-    console.log(image, exam_id, student_id);
-
     if (!image) {
       return res.status(400).json({ error: "Image is required" });
     }
