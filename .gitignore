@@ -1,5 +1,6 @@
 **/node_modules/
 **/storage/scans
+**/storage/pipeline_visualizations
 __pycache__/
 *.pyc
 **/compute/cv/tests/fixtures/images/*.png
@@ -8,3 +9,4 @@ __pycache__/
 **/compute/cv/tests/fixtures/images/*.jpg
 **/compute/cv/tests/fixtures/*.png
 **/compute/cv/tests/fixtures/*.jpg
+**/.env
