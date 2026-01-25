@@ -23,8 +23,8 @@ interface LiveScannerProps {
 }
 
 const VIDEO_CONSTRAINTS = {
-  width: { ideal: 1920 },
-  height: { ideal: 1080 },
+  width: { ideal: 720 },
+  height: { ideal: 960 },
   facingMode: "environment", // Use rear camera on mobile
 };
 
@@ -368,6 +368,7 @@ export function LiveScanner({
   const handleCapture = useCallback(() => {
     if (!webcamRef.current || !selectedQuiz || !selectedStudent) return;
 
+    // Capture at actual video resolution for best quality
     const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
       // Extract base64 data without the data URL prefix
@@ -468,7 +469,7 @@ export function LiveScanner({
       )}
 
       {/* Camera Preview with Overlay */}
-      <div className="relative aspect-3/4 w-full overflow-hidden rounded-lg border-2 border-dashed bg-muted">
+      <div className="relative aspect-3/4 w-full max-w-md mx-auto overflow-hidden rounded-lg border-2 border-dashed bg-muted">
         <Webcam
           ref={webcamRef}
           audio={false}
@@ -497,7 +498,7 @@ export function LiveScanner({
       </div>
 
       {/* Controls */}
-      <div className="flex gap-2">
+      <div className="flex gap-2  max-w-md mx-auto">
         <Button
           onClick={handleCapture}
           disabled={!canCapture}
