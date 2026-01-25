@@ -59,30 +59,44 @@ def calculate_fill_ratio(
     
     # Threshold to binary
     if use_adaptive:
-        # Try Otsu's method first for bright images
-        mean_brightness = np.mean(masked[mask > 0])
+        # Get mean brightness of pixels inside the circle only
+        circle_area = masked[mask > 0]
+        mean_brightness = np.mean(circle_area) if len(circle_area) > 0 else 128
         
-        if mean_brightness > 200:  # Very bright image
-            # Use Otsu's method which automatically finds optimal threshold
+        if mean_brightness > 200:  # Very bright image - likely unfilled bubble
+            # For bright images, use stricter threshold to avoid false positives
+            # Apply slight blur to reduce noise before thresholding
+            blurred = cv2.GaussianBlur(masked, (5, 5), 0)
             _, binary = cv2.threshold(
-                masked,
+                blurred,
                 0,
                 255,
                 cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
             )
+            # Apply mask and erode slightly to remove edge artifacts
             binary = cv2.bitwise_and(binary, binary, mask=mask)
+            kernel = np.ones((3, 3), np.uint8)
+            binary = cv2.erode(binary, kernel, iterations=1)
             dark_pixels = np.sum(binary > 0)
+        elif mean_brightness < 100:  # Dark image - likely filled bubble
+            # For dark images, use simpler threshold
+            dark_pixels = np.sum((circle_area < dark_threshold))
         else:
             # Adaptive threshold for normal lighting
+            # Apply blur to reduce noise
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
             binary = cv2.adaptiveThreshold(
-                gray,  # Use full gray image, not masked
+                blurred,
                 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV,
-                11,
-                2
+                blockSize=15,  # Larger block size for better local analysis
+                C=5  # Higher C to reduce noise
             )
             binary = cv2.bitwise_and(binary, binary, mask=mask)
+            # Erode to remove edge artifacts
+            kernel = np.ones((3, 3), np.uint8)
+            binary = cv2.erode(binary, kernel, iterations=1)
             dark_pixels = np.sum(binary > 0)
     else:
         # Simple threshold
