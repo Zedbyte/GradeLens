@@ -3,6 +3,9 @@ Main grading pipeline orchestrator.
 Coordinates all CV stages and produces detection results.
 """
 import time
+import base64
+import cv2
+import numpy as np
 from datetime import datetime
 from typing import Dict, Optional
 from pathlib import Path
@@ -89,12 +92,13 @@ def run_detection_pipeline(
         # ============================================================
         logger.info("Stage 1: Preprocessing")
         try:
-            preprocessed, metrics = preprocess_image(
+            preprocessed, metrics, intermediates = preprocess_image(
                 image_path,
                 apply_clahe=True,
                 check_quality=True,
                 min_blur_score=80.0 if strict_quality else 50.0,
-                binarization="auto"  # Auto-select Otsu or Adaptive based on lighting
+                binarization="auto",  # Auto-select Otsu or Adaptive based on lighting
+                return_intermediates=True
             )
             
             quality_metrics = {
@@ -276,6 +280,151 @@ def run_detection_pipeline(
         else:
             status = "success"
         
+        # Create and save pipeline visualization images
+        from app.schemas.detection_result import PipelineImages
+        from app.utils.visualization import draw_paper_boundary
+        
+        def save_visualization(img: np.ndarray, name: str) -> Optional[str]:
+            """Save visualization image to disk and return relative path."""
+            if img is None:
+                return None
+            try:
+                # Create visualization directory
+                vis_dir = Path("storage/pipeline_visualizations") / scan_id
+                vis_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Convert grayscale to BGR for saving
+                if len(img.shape) == 2:
+                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+                
+                # Save image
+                file_path = vis_dir / f"{name}.jpg"
+                cv2.imwrite(str(file_path), img, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                
+                # Return relative path for API
+                return str(file_path.relative_to("storage"))
+            except Exception as e:
+                logger.warning(f"Failed to save visualization {name}: {e}")
+                return None
+        
+        # Load original for visualization
+        original_img = cv2.imread(image_path)
+        
+        # Stage 1: Original
+        path_original = save_visualization(original_img.copy(), "1_original")
+        
+        # Stage 2: Grayscale
+        path_grayscale = None
+        if intermediates and intermediates.get('grayscale') is not None:
+            path_grayscale = save_visualization(intermediates['grayscale'].copy(), "2_grayscale")
+        
+        # Stage 3: CLAHE
+        path_clahe = None
+        if intermediates and intermediates.get('clahe') is not None:
+            path_clahe = save_visualization(intermediates['clahe'].copy(), "3_clahe")
+        
+        # Stage 4: Binary
+        path_binary = None
+        if intermediates and intermediates.get('binary') is not None:
+            path_binary = save_visualization(intermediates['binary'].copy(), "4_binary")
+        
+        # Stage 5: Paper Detection with boundary overlay
+        path_paper = None
+        if 'paper_corners' in locals() and paper_corners is not None:
+            paper_vis = preprocessed.copy()
+            if len(paper_vis.shape) == 2:
+                paper_vis = cv2.cvtColor(paper_vis, cv2.COLOR_GRAY2BGR)
+            paper_vis = draw_paper_boundary(paper_vis, paper_corners)
+            path_paper = save_visualization(paper_vis, "5_paper_detection")
+        
+        # Stage 6: Perspective Corrected
+        path_perspective = None
+        if 'warped' in locals() and warped is not None:
+            path_perspective = save_visualization(warped.copy(), "6_perspective_corrected")
+        
+        # Stage 7: Aligned
+        path_aligned = None
+        if 'aligned' in locals() and aligned is not None:
+            path_aligned = save_visualization(aligned.copy(), "7_aligned")
+        
+        # Stage 8: ROI Extraction visualization
+        path_roi = None
+        if 'aligned' in locals() and aligned is not None and template is not None:
+            roi_vis = aligned.copy()
+            if len(roi_vis.shape) == 2:
+                roi_vis = cv2.cvtColor(roi_vis, cv2.COLOR_GRAY2BGR)
+            
+            # Draw all bubble ROIs
+            for question_id, question_bubbles in all_bubbles.items():
+                question_template = next((q for q in template.questions if q.question_id == question_id), None)
+                if question_template:
+                    for option, roi_image in question_bubbles.items():
+                        if option in question_template.options:
+                            pos = question_template.options[option]
+                            x = int(pos.x) if hasattr(pos, 'x') else int(pos[0])
+                            y = int(pos.y) if hasattr(pos, 'y') else int(pos[1])
+                            radius = template.bubble_config.radius
+                            
+                            color = (0, 255, 0) if roi_image is not None else (0, 0, 255)
+                            cv2.circle(roi_vis, (x, y), radius, color, 2)
+            
+            path_roi = save_visualization(roi_vis, "8_roi_extraction")
+        
+        # Stage 9: Fill Scoring visualization
+        path_scoring = None
+        if 'aligned' in locals() and aligned is not None and template is not None and len(detections) > 0:
+            scoring_vis = aligned.copy()
+            if len(scoring_vis.shape) == 2:
+                scoring_vis = cv2.cvtColor(scoring_vis, cv2.COLOR_GRAY2BGR)
+            
+            # Draw detection results
+            for detection in detections:
+                question_template = next((q for q in template.questions if q.question_id == detection.question_id), None)
+                if question_template:
+                    for option in question_template.options.keys():
+                        pos = question_template.options[option]
+                        x = int(pos.x) if hasattr(pos, 'x') else int(pos[0])
+                        y = int(pos.y) if hasattr(pos, 'y') else int(pos[1])
+                        radius = template.bubble_config.radius
+                        
+                        # Color based on selection
+                        if option in detection.selected:
+                            if detection.detection_status == 'answered':
+                                color = (0, 255, 0)  # Green
+                                thickness = 3
+                            elif detection.detection_status == 'ambiguous':
+                                color = (0, 0, 255)  # Red
+                                thickness = 3
+                            else:
+                                color = (0, 165, 255)  # Orange
+                                thickness = 2
+                        else:
+                            color = (128, 128, 128)  # Gray
+                            thickness = 1
+                        
+                        cv2.circle(scoring_vis, (x, y), radius, color, thickness)
+                        
+                        # Add fill percentage
+                        fill_pct = detection.fill_ratios.get(option, 0) * 100
+                        if fill_pct > 0:
+                            text = f"{fill_pct:.0f}%"
+                            cv2.putText(scoring_vis, text, (x + radius + 5, y + 5),
+                                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+            
+            path_scoring = save_visualization(scoring_vis, "9_fill_scoring")
+        
+        pipeline_images = PipelineImages(
+            original=path_original,
+            grayscale=path_grayscale,
+            clahe=path_clahe,
+            binary=path_binary,
+            paper_detection=path_paper,
+            perspective_corrected=path_perspective,
+            aligned=path_aligned,
+            roi_extraction=path_roi,
+            fill_scoring=path_scoring
+        )
+        
         result = DetectionResult(
             scan_id=scan_id,
             template_id=template_id,
@@ -285,7 +434,8 @@ def run_detection_pipeline(
             warnings=[DetectionWarning(**w) for w in warnings],
             errors=[DetectionError(**e) for e in errors],
             processing_time_ms=processing_time,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
+            pipeline_images=pipeline_images
         )
         
         logger.success(

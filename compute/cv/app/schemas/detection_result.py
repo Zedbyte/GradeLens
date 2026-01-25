@@ -74,6 +74,19 @@ class DetectionError(BaseModel):
     stage: Optional[str] = Field(None, description="Pipeline stage where error occurred")
 
 
+class PipelineImages(BaseModel):
+    """Pipeline visualization image file paths."""
+    original: Optional[str] = Field(None, description="Original input image path")
+    grayscale: Optional[str] = Field(None, description="Grayscale conversion path")
+    clahe: Optional[str] = Field(None, description="CLAHE contrast enhancement path")
+    binary: Optional[str] = Field(None, description="Binarized (Otsu/Adaptive) path")
+    paper_detection: Optional[str] = Field(None, description="Paper boundary visualization path")
+    perspective_corrected: Optional[str] = Field(None, description="Perspective-corrected image path")
+    aligned: Optional[str] = Field(None, description="Template-aligned with registration marks path")
+    roi_extraction: Optional[str] = Field(None, description="ROI extraction visualization path")
+    fill_scoring: Optional[str] = Field(None, description="Final fill detection overlay path")
+
+
 class DetectionResult(BaseModel):
     """
     Complete detection result from Python CV pipeline.
@@ -111,6 +124,10 @@ class DetectionResult(BaseModel):
     timestamp: Optional[datetime] = Field(
         None,
         description="When detection was completed"
+    )
+    pipeline_images: Optional[PipelineImages] = Field(
+        None,
+        description="Pipeline visualization images for debugging"
     )
 
     class Config:
