@@ -49,6 +49,7 @@ services:
     command: python -m app.workers.scan_worker
     volumes:
       - ../storage/scans:/data/scans
+      - ../storage:/app/storage
     environment:
       REDIS_URL: redis://redis:6379/0
       IMAGE_ROOT: /data/scans
@@ -66,6 +67,7 @@ services:
     volumes:
       - ../compute/cv/app:/app/app
       - ../compute/cv/main.py:/app/main.py
+      - ../storage:/app/storage
     environment:
       REDIS_URL: redis://redis:6379/0
       DEBUG: "true"
