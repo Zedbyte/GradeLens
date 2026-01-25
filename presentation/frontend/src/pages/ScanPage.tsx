@@ -171,22 +171,83 @@ export function ScanPage() {
         filteredClasses={filteredClasses}
       />
 
-      {/* Three Column Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left Column: Quiz Selection + Scan Queue */}
-        <div className="space-y-6 col-span-3">
-          {/* Assessment Selection */}
-          <AssessmentSelection
-            quizzes={quizzes}
-            students={filteredStudents}
-            selectedQuiz={selectedQuiz}
-            selectedStudent={selectedStudent}
-            onQuizChange={setSelectedQuiz}
-            onStudentChange={setSelectedStudent}
-            quizDetails={quizDetails}
-          />
+      {/* Assessment Selection Row */}
+      <AssessmentSelection
+        quizzes={quizzes}
+        students={filteredStudents}
+        selectedQuiz={selectedQuiz}
+        selectedStudent={selectedStudent}
+        onQuizChange={setSelectedQuiz}
+        onStudentChange={setSelectedStudent}
+        quizDetails={quizDetails}
+      />
 
-          {/* Scan Queue */}
+      {/* Scan Input Row */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Scan Input</CardTitle>
+          <CardDescription>Choose your preferred input method</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="scanning" className="flex items-center gap-2">
+                <IconCamera className="h-4 w-4" />
+                Scanning
+              </TabsTrigger>
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <IconUpload className="h-4 w-4" />
+                Upload
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="flex items-center gap-2">
+                <IconEdit className="h-4 w-4" />
+                Manual
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="scanning" className="space-y-4 py-4">
+              <LiveScanner
+                selectedQuiz={selectedQuiz}
+                selectedStudent={selectedStudent}
+                template={template || undefined}
+                onCapture={handleLiveCapture}
+              />
+            </TabsContent>
+
+            <TabsContent value="upload" className="py-4">
+              <UploadForm 
+                onUploaded={(scanId) => {
+                  loadScans();
+                  selectScan(scanId);
+                }}
+                selectedQuiz={selectedQuiz}
+                selectedStudent={selectedStudent}
+              />
+            </TabsContent>
+
+            <TabsContent value="manual" className="space-y-4 py-4">
+              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 space-y-4">
+                <IconEdit className="h-16 w-16 text-muted-foreground" />
+                <div className="text-center space-y-2">
+                  <p className="font-medium">Manual Entry</p>
+                  <p className="text-sm text-muted-foreground">
+                    Manually enter student answers
+                  </p>
+                </div>
+                <Button disabled={!selectedQuiz || !selectedStudent}>
+                  <IconEdit className="mr-2 h-4 w-4" />
+                  Start Manual Entry
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Scan Queue and Details Row */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Scan Queue - Smaller Column */}
+        <div className="lg:col-span-4">
           <ScanQueue
             scans={scans}
             selectedScanId={selectedScan?.scan_id}
@@ -196,76 +257,15 @@ export function ScanPage() {
           />
         </div>
 
-        {/* Middle Column: Tabs */}
-        <Card className="col-span-5 self-start">
-          <CardHeader>
-            <CardTitle>Scan Input</CardTitle>
-            <CardDescription>Choose your preferred input method</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="scanning" className="flex items-center gap-2">
-                  <IconCamera className="h-4 w-4" />
-                  Scanning
-                </TabsTrigger>
-                <TabsTrigger value="upload" className="flex items-center gap-2">
-                  <IconUpload className="h-4 w-4" />
-                  Upload
-                </TabsTrigger>
-                <TabsTrigger value="manual" className="flex items-center gap-2">
-                  <IconEdit className="h-4 w-4" />
-                  Manual
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="scanning" className="space-y-4 py-4">
-                <LiveScanner
-                  selectedQuiz={selectedQuiz}
-                  selectedStudent={selectedStudent}
-                  template={template || undefined}
-                  onCapture={handleLiveCapture}
-                />
-              </TabsContent>
-
-              <TabsContent value="upload" className="py-4">
-                <UploadForm 
-                  onUploaded={(scanId) => {
-                    loadScans();
-                    selectScan(scanId);
-                  }}
-                  selectedQuiz={selectedQuiz}
-                  selectedStudent={selectedStudent}
-                />
-              </TabsContent>
-
-              <TabsContent value="manual" className="space-y-4 py-4">
-                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 space-y-4">
-                  <IconEdit className="h-16 w-16 text-muted-foreground" />
-                  <div className="text-center space-y-2">
-                    <p className="font-medium">Manual Entry</p>
-                    <p className="text-sm text-muted-foreground">
-                      Manually enter student answers
-                    </p>
-                  </div>
-                  <Button disabled={!selectedQuiz || !selectedStudent}>
-                    <IconEdit className="mr-2 h-4 w-4" />
-                    Start Manual Entry
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {/* Right Column: Scan Details */}
-        <ScanDetails
-          scan={selectedScan}
-          quiz={selectedScanDetails?.quiz}
-          student={selectedScanDetails?.student}
-          onSave={handleSaveScan}
-          className="col-span-4"
-        />
+        {/* Scan Details - Larger Column */}
+        <div className="lg:col-span-8">
+          <ScanDetails
+            scan={selectedScan}
+            quiz={selectedScanDetails?.quiz}
+            student={selectedScanDetails?.student}
+            onSave={handleSaveScan}
+          />
+        </div>
       </div>
     </div>
   );

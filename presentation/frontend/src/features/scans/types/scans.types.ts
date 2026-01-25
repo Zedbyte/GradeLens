@@ -37,6 +37,18 @@ export interface DetectionError {
   stage?: string;
 }
 
+export interface PipelineImages {
+  original?: string;
+  grayscale?: string;
+  clahe?: string;
+  binary?: string;
+  paper_detection?: string;
+  perspective_corrected?: string;
+  aligned?: string;
+  roi_extraction?: string;
+  fill_scoring?: string;
+}
+
 export interface DetectionResult {
   status: "success" | "failed" | "needs_review";
   detections: QuestionDetection[];
@@ -45,6 +57,7 @@ export interface DetectionResult {
   errors: DetectionError[];
   processing_time_ms?: number;
   timestamp?: string;
+  pipeline_images?: PipelineImages;
 }
 
 export interface GradingResult {

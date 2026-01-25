@@ -20,8 +20,8 @@ export function ScanQueue({
   students,
 }: ScanQueueProps) {
   return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader className="pb-3 border-b border-border">
+    <Card className="shadow-sm flex flex-col max-h-[calc(100vh-1rem)]">
+      <CardHeader className="pb-3 border-b border-border shrink-0">
         <CardTitle className="text-sm font-semibold flex items-center justify-between">
           Scan Queue
           <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-bold">
@@ -29,7 +29,7 @@ export function ScanQueue({
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 pt-3">
+      <CardContent className="space-y-2 pt-3 flex-1 overflow-auto min-h-0">
         {scans.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">No scans in queue</p>
         )}

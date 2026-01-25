@@ -1,6 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Quiz } from "@/features/quizzes/types/quizzes.types";
 import type { Student } from "@/features/students/types/students.types";
 
@@ -24,61 +24,56 @@ export function AssessmentSelection({
   quizDetails,
 }: AssessmentSelectionProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Assessment Selection</CardTitle>
-        <CardDescription>Choose a quiz to scan</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="quiz-select">Quiz</Label>
-          <select
-            id="quiz-select"
-            value={selectedQuiz}
-            onChange={(e) => onQuizChange(e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="">Select Quiz</option>
+    <div className="flex flex-wrap items-end gap-4">
+      <div className="space-y-2 min-w-64">
+        <Label htmlFor="quiz-select" className="text-sm font-medium">
+          Quiz
+        </Label>
+        <Select value={selectedQuiz} onValueChange={onQuizChange}>
+          <SelectTrigger id="quiz-select" className="w-full">
+            <SelectValue placeholder="Select Quiz" />
+          </SelectTrigger>
+          <SelectContent>
             {quizzes.map((quiz) => (
-              <option key={quiz._id} value={quiz._id}>
+              <SelectItem key={quiz._id} value={quiz._id}>
                 {quiz.name}
-              </option>
+              </SelectItem>
             ))}
-          </select>
-        </div>
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="space-y-2">
-            <Label htmlFor="student-select">Student</Label>
-            <select
-                id="student-select"
-                value={selectedStudent}
-                onChange={(e) => onStudentChange(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-                <option value="">Select Student</option>
-                {students.map((student) => (
-                <option key={student._id} value={student._id}>
-                    {student.first_name} {student.last_name}
-                </option>
-                ))}
-            </select>
-        </div>
+      <div className="space-y-2 min-w-64">
+        <Label htmlFor="student-select" className="text-sm font-medium">
+          Student
+        </Label>
+        <Select value={selectedStudent} onValueChange={onStudentChange}>
+          <SelectTrigger id="student-select" className="w-full">
+            <SelectValue placeholder="Select Student" />
+          </SelectTrigger>
+          <SelectContent>
+            {students.map((student) => (
+              <SelectItem key={student._id} value={student._id}>
+                {student.first_name} {student.last_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        {selectedQuiz && quizDetails && (
-          <div className="rounded-lg border p-3 space-y-1">
-            <p className="text-xs font-medium">Selected Quiz</p>
-            <p className="text-sm">{quizDetails.name}</p>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {quizDetails.question_count || 0} questions
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {quizDetails.total_points || 0} points
-              </Badge>
-            </div>
+      {selectedQuiz && quizDetails && (
+        <div className="rounded-lg border bg-muted/30 px-4 py-2.5 flex items-center gap-3">
+          <div className="text-sm font-medium">{quizDetails.name}</div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {quizDetails.question_count || 0} questions
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {quizDetails.total_points || 0} points
+            </Badge>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 }
