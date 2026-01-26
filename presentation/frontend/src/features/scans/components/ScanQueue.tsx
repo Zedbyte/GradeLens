@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconCheck, IconClock, IconAlertCircle } from "@tabler/icons-react";
-import type { Scan } from "@/features/scans/types/scans.types";
+import type { Scan } from "@packages/types/scans/scans.types";
 import type { Quiz } from "@/features/quizzes/types/quizzes.types";
 import type { Student } from "@/features/students/types/students.types";
 

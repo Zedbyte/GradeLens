@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { previewFrameApi } from "../api/scans.api";
 import type { Template } from "@/types/template.types";
-import type { FramePreviewResponse } from "../types/scans.types";
+import type { FramePreviewResponse } from "@packages/types/scans/scans.types";
 
 interface LiveScannerProps {
   selectedQuiz?: string;

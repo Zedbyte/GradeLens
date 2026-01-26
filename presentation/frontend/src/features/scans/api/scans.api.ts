@@ -3,9 +3,11 @@ import type {
   Scan, 
   UploadScanRequest, 
   UploadScanResponse,
+  UpdateScanAnswersRequest,
+  UpdateScanAnswersResponse,
   FramePreviewRequest,
   FramePreviewResponse
-} from "../types/scans.types";
+} from "@packages/types/scans/scans.types";
 
 const CV_SERVICE_URL = import.meta.env.VITE_CV_SERVICE_URL || "http://localhost:8000";
 

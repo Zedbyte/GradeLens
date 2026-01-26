@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { IconCheck, IconClock, IconArrowRight, IconPhotoOff, IconFilePencil, IconUser, IconClipboardCheck } from "@tabler/icons-react";
-import type { Scan, QuestionDetection, DetectionError } from "@/features/scans/types/scans.types";
+import type { Scan, QuestionDetection, DetectionError } from "@packages/types/scans/scans.types";
 import type { Quiz } from "@/features/quizzes/types/quizzes.types";
 import type { Student } from "@/features/students/types/students.types";
 

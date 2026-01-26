@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconArrowRight, IconPhotoOff, IconSettingsAutomation } from "@tabler/icons-react";
-import type { Scan } from "@/features/scans/types/scans.types";
-import type { DetectionWarning, QualityMetrics } from "@/features/scans/types/scans.types";
+import type { Scan } from "@packages/types/scans/scans.types";
+import type { DetectionWarning, QualityMetrics } from "@packages/types/scans/scans.types";
 import { cn } from "@/lib/utils";
 
 interface ViewAdvancedDialogProps {

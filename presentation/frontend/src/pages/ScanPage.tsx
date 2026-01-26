@@ -18,7 +18,7 @@ import { AssessmentSelection } from "../features/scans/components/AssessmentSele
 import { ScanQueue } from "../features/scans/components/ScanQueue";
 import { ScanDetails } from "../features/scans/components/ScanDetails";
 import { uploadScanApi } from "../features/scans/api/scans.api";
-import type { Scan } from "@/features/scans/types/scans.types";
+import type { Scan } from "@packages/types/scans/scans.types.ts";
 
 export function ScanPage() {
   // State for filters

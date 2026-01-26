@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { IconCheck, IconArrowRight } from "@tabler/icons-react";
-import type { QuestionDetection } from "@/features/scans/types/scans.types";
+import { IconCheck, IconArrowRight, IconFilePencil } from "@tabler/icons-react";
+import type { QuestionDetection } from "@packages/types/scans/scans.types";
 
 interface Answer {
   question_id: number;

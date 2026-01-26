@@ -2,6 +2,7 @@ import { ScanModel } from "../models/Scan.ts";
 import { ExamModel } from "../models/Exam.ts";
 import { enqueueScan } from "../queues/scan.queue.ts";
 import { Types } from "mongoose";
+import { QuestionDetection } from "@packages/types/scans/scans.types.ts";
 
 export async function createScan(
   scan_id: string,

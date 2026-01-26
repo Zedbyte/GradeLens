@@ -9,30 +9,39 @@ export type ScanStatus =
   | "failed"
   | "error";
 
+export type DetectionStatus = "answered" | "unanswered" | "ambiguous" | "error";
+
+export type DetectionResultStatus = "success" | "failed" | "needs_review";
+
+export type GradingResultStatus = "graded" | "needs_review" | "failed";
+
+export type ReviewReason = "ambiguous" | "unanswered" | "low_confidence" | "multiple_marks";
+
 export interface QuestionDetection {
   question_id: number;
-  fill_ratios: Record<string, number>;
-  selected: string[];
-  detection_status: "answered" | "unanswered" | "ambiguous" | "error";
-  confidence?: number;
+  fill_ratios: Record<string, number>; // e.g., { "A": 0.05, "B": 0.82, ... }
+  selected: string[]; // Empty if unanswered, multiple if ambiguous
+  detection_status: DetectionStatus;
+  confidence?: number; // 0.0 - 1.0
+  manually_edited?: boolean; // True if manually edited by user
 }
 
 export interface QualityMetrics {
   blur_score?: number;
-  brightness_mean?: number;
+  brightness_mean?: number; // 0-255
   brightness_std?: number;
   skew_angle?: number;
   perspective_correction_applied?: boolean;
 }
 
 export interface DetectionWarning {
-  code: string;
+  code: string; // e.g., "LOW_BLUR_SCORE"
   message: string;
   question_id?: number;
 }
 
 export interface DetectionError {
-  code: string;
+  code: string; // e.g., "PAPER_NOT_DETECTED"
   message: string;
   stage?: string;
 }
@@ -50,7 +59,9 @@ export interface PipelineImages {
 }
 
 export interface DetectionResult {
-  status: "success" | "failed" | "needs_review";
+  scan_id: string;
+  template_id: string;
+  status: DetectionResultStatus;
   detections: QuestionDetection[];
   quality_metrics?: QualityMetrics;
   warnings: DetectionWarning[];
@@ -60,18 +71,36 @@ export interface DetectionResult {
   pipeline_images?: PipelineImages;
 }
 
+export interface ScoreSummary {
+  points_earned: number;
+  points_possible: number;
+  percentage: number;
+  correct_count: number;
+  incorrect_count: number;
+  unanswered_count: number;
+  ambiguous_count: number;
+}
+
+export interface QuestionGrade {
+  question_id: number;
+  detected: string[]; // What CV detected
+  correct_answer: string; // From answer key
+  is_correct: boolean | null; // null if unanswered/ambiguous
+  points_earned: number;
+  points_possible: number;
+  requires_review?: boolean;
+  review_reason?: ReviewReason;
+}
+
 export interface GradingResult {
-  needs_manual_review?: boolean;
-  score?: number;
-  correct_answers?: number;
-  total_questions?: number;
-  percentage?: number;
-  answers?: Array<{
-    question_id: number;
-    student_answer: string[];
-    correct_answer: string[];
-    is_correct: boolean;
-  }>;
+  scan_id: string;
+  exam_id: string;
+  status: GradingResultStatus;
+  grades: QuestionGrade[];
+  score: ScoreSummary;
+  needs_manual_review: boolean;
+  graded_at?: string;
+  graded_by?: string;
 }
 
 export interface ScanLog {
@@ -117,6 +146,10 @@ export interface Scan {
   reviewed_at?: string;
   review_notes?: string;
   
+  // Manual grading edits
+  graded_by?: string;
+  graded_at?: string;
+  
   // Audit trail
   logs?: ScanLog[];
   
@@ -144,6 +177,17 @@ export interface UploadScanResponse {
   exam_id: string;
   student_id: string;
   template_id: string;
+}
+
+export interface UpdateScanAnswersRequest {
+  answers: Record<number, string[]>; // question_id -> selected options
+}
+
+export interface UpdateScanAnswersResponse {
+  scan_id: string;
+  status: string;
+  graded_by: string;
+  graded_at: string;
 }
 
 // Live scanner preview types

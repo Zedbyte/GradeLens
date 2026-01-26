@@ -1,6 +1,6 @@
 import { Schema, model, Types } from "mongoose";
-import type { DetectionResult } from "../types/detection_result.types.ts";
-import type { GradingResult } from "../types/grading_result.types.ts";
+import type { DetectionResult } from "@packages/types/scans/scans.types.ts";
+import type { GradingResult } from "@packages/types/scans/scans.types.ts";
 
 /**
  * Scan Model

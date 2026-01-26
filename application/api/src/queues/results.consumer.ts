@@ -1,6 +1,7 @@
 import Redis from "ioredis";
 import { ScanModel } from "../models/Scan.ts";
-import type { DetectionResult } from "../types/detection_result.types.ts";
+import type { DetectionResult } from "@packages/types/scans/scans.types.ts";
+import { gradeDetectionResult } from "../services/grading.service.ts";
 import { logger } from "../utils/logger.ts";
 
 const RESULTS_QUEUE = "scan_results";

@@ -6,7 +6,7 @@ import { IconPlus, IconEdit, IconTrash, IconCalendar, IconClipboard } from "@tab
 import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { QuizFormDialog } from "@/features/quizzes/components/QuizFormDialog";
-import type { Quiz } from "@/features/quizzes/types/quizzes.types";
+import type { CreateQuizRequest, Quiz, UpdateQuizRequest } from "@/features/quizzes/types/quizzes.types";
 
 export default function QuizzesPage() {
   const { quizzes, loading, error, total, loadQuizzes, createQuiz, updateQuiz, deleteQuiz } = useQuizzes();
