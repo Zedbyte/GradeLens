@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import type { ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner"
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
             <div className="flex-1">
             {children}
+            <Toaster />
             </div>
         </main>
         </SidebarProvider>
