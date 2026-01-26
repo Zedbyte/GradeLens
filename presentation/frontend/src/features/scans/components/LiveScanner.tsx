@@ -393,6 +393,22 @@ export function LiveScanner({
 
   const canCapture = selectedQuiz && selectedStudent && isReady;
 
+  const alertMessage = (() => {
+    if (!selectedQuiz) {
+      return "Please select a quiz before scanning";
+    }
+
+    if (selectedQuiz && !template) {
+      return "Please select an assessment to load the template guide";
+    }
+
+    if (!selectedStudent) {
+      return "Please select a student before scanning";
+    }
+
+    return null;
+  })();
+
   return (
     <div className="space-y-4">
       {/* Status Indicators */}
@@ -441,30 +457,10 @@ export function LiveScanner({
       )}
 
       {/* Warnings */}
-      {!template && (
+      {alertMessage && (
         <Alert>
           <IconAlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please select an assessment to load the template guide
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!selectedQuiz && (
-        <Alert>
-          <IconAlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please select a quiz before scanning
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!selectedStudent && (
-        <Alert>
-          <IconAlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please select a student before scanning
-          </AlertDescription>
+          <AlertDescription>{alertMessage}</AlertDescription>
         </Alert>
       )}
 
