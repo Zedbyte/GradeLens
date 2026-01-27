@@ -39,14 +39,14 @@ const navMain = [
     icon: IconDashboard,
   },
   {
-    title: "Quizzes", //Page where we can create quizzes and assign them to classes, and answer keys
-    url: ROUTES.QUIZZES,
-    icon: IconWallpaper,
-  },
-  {
     title: "Scans", //Page to scan/upload student answer sheets
     url: ROUTES.SCAN,
     icon: IconCamera,
+  },
+  {
+    title: "Quizzes", //Page where we can create quizzes and assign them to classes, and answer keys
+    url: ROUTES.QUIZZES,
+    icon: IconWallpaper,
   },
   {
     title: "Students", //Create accounts, and students.
