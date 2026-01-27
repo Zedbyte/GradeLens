@@ -41,8 +41,8 @@ export function ScanDetailsContent({
     <div className={`space-y-${isDialog ? '6' : '4'}`}>
       {/* Student & Quiz Info */}
       {(student || quiz || (scan.grading_result && scan.grading_result.score)) && (
-        <div className="rounded-xl  bg-background/60 p-4 shadow-sm border border-border">
-          <div className="text-sm flex gap-3 flex-wrap">
+        <div className="rounded-xl bg-background/60 p-4 border-x border-border shadow-sm">
+          <div className="text-sm flex justify-evenly gap-3 flex-wrap">
             {student && (
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
@@ -146,7 +146,7 @@ export function ScanDetailsContent({
       {detections.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-semibold">Detected Answers</h4>
-          <ScrollArea className={isDialog ? "h-96" : "h-75"}>
+          <ScrollArea className={isDialog ? "h-96" : "h-75 border rounded-md"}>
             <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 p-2">
               {detections.map((detection) => {
                 const isManuallyEdited = detection.manually_edited;
