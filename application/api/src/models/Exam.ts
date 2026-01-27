@@ -175,4 +175,6 @@ ExamSchema.statics.findActiveExams = function(created_by?: string) {
 
 export const ExamModel = model("Exam", ExamSchema);
 
-export type ExamDocument = InstanceType<typeof ExamModel>;
+export interface ExamDocument extends InstanceType<typeof ExamModel> {
+  toAnswerKey(): AnswerKey;
+}
