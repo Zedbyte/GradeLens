@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchScanApi } from "../api/scans.api";
-import type { Scan } from "../types/scans.types";
+import type { Scan } from "@packages/types/scans/scans.types";
 
 /**
  * Hook to poll a scan until it reaches a terminal status
