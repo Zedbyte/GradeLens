@@ -133,6 +133,28 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
     }
   };
 
+  // Redo scan: scroll to top, notify user that quiz/student were auto-selected, then invoke parent handler
+  const handleRedoClick = () => {
+    // Scroll to top of page to emphasize selection
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      // fallback
+      window.scrollTo(0, 0);
+    }
+
+    // Notify via sonner that we auto-selected quiz/student
+    const quizLabel = quiz ? `${quiz.name}` : "(quiz)";
+    const studentLabel = student ? `${student.first_name} ${student.last_name}` : "(student)";
+
+    toast.info("Auto-selected quiz & student", {
+      description: `Pre-filled ${quizLabel} for ${studentLabel} — ready to re-upload.`,
+    });
+
+    // Call parent handler to switch to upload view / pre-fill selections
+    if (onRedoScan) onRedoScan();
+  };
+
   if (!scan) {
     return (
       <Card className={cn(
@@ -254,7 +276,7 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
           <div className="flex gap-2">
             {onRedoScan && (
               <Button
-                onClick={onRedoScan}
+                onClick={handleRedoClick}
                 variant="outline"
                 className="flex-1"
               >
