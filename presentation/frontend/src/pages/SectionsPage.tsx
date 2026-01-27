@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useSections } from "../features/sections/hooks/useSections";
 import { useGrades } from "../features/grades/hooks/useGrades";
 import { SectionFormDialog } from "../features/sections/components/SectionFormDialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconEdit, IconTrash, IconUsers } from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import type { CreateSectionRequest, Section, UpdateSectionRequest } from "../features/sections/types/sections.types";
+import DataTable from "@/components/data-table";
+import getSectionColumns from "@/features/sections/columns/sections.columns";
 
 export function SectionsPage() {
   const { sections, loading, error, loadSections, createSection, updateSection, deleteSection } = useSections();
@@ -45,13 +46,6 @@ export function SectionsPage() {
       return await updateSection(selectedSection._id, data as UpdateSectionRequest);
     }
     return false;
-  };
-
-  const getGradeName = (gradeId: string | { name: string; level: number } | undefined) => {
-    if (!gradeId) return "All Grades";
-    if (typeof gradeId === "object") return `${gradeId.name} (Level ${gradeId.level})`;
-    const grade = grades.find((g) => g._id === gradeId);
-    return grade ? `${grade.name} (Level ${grade.level})` : "All Grades";
   };
 
   if (loading && sections.length === 0) {
@@ -97,60 +91,7 @@ export function SectionsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sections.map((section) => (
-            <Card key={section._id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle>{section.name}</CardTitle>
-                    <CardDescription className="space-y-1 mt-2">
-                      <div>
-                        <Badge variant="outline">
-                          {getGradeName(section.grade_id)}
-                        </Badge>
-                      </div>
-                      {section.capacity! > 0 && (
-                        <div className="flex items-center gap-1 text-xs">
-                          <IconUsers className="h-3 w-3" />
-                          Capacity: {section.capacity}
-                        </div>
-                      )}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(section)}
-                    >
-                      <IconEdit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(section)}
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="font-medium">ID:</span> {section.section_id}
-                  </div>
-                  {section.description && (
-                    <div className="text-sm text-muted-foreground">
-                      {section.description}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <DataTable columns={getSectionColumns({ onEdit: handleEdit, onDelete: handleDelete, grades })} data={sections} searchColumn="name" />
       )}
 
       <SectionFormDialog

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useGrades } from "../features/grades/hooks/useGrades";
 import { GradeFormDialog } from "../features/grades/components/GradeFormDialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import type { CreateGradeRequest, Grade, UpdateGradeRequest } from "../features/grades/types/grades.types";
+import DataTable from "@/components/data-table";
+import getGradeColumns from "../features/grades/columns/grades.columns";
 
 export function GradesPage() {
   const { grades, loading, error, loadGrades, createGrade, updateGrade, deleteGrade } = useGrades();
@@ -87,52 +88,7 @@ export function GradesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {grades.map((grade) => (
-            <Card key={grade._id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>{grade.name}</CardTitle>
-                    <CardDescription>
-                      <Badge variant="secondary" className="mt-2">
-                        Level {grade.level}
-                      </Badge>
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(grade)}
-                    >
-                      <IconEdit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(grade)}
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="font-medium">ID:</span> {grade.grade_id}
-                  </div>
-                  {grade.description && (
-                    <div className="text-sm text-muted-foreground">
-                      {grade.description}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <DataTable columns={getGradeColumns({ onEdit: handleEdit, onDelete: handleDelete })} data={grades} searchColumn="name" />
       )}
 
       <GradeFormDialog

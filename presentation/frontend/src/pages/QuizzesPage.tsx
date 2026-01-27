@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconEdit, IconTrash, IconCalendar, IconClipboard } from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { QuizFormDialog } from "@/features/quizzes/components/QuizFormDialog";
 import type { CreateQuizRequest, Quiz, UpdateQuizRequest } from "@/features/quizzes/types/quizzes.types";
+import DataTable from "@/components/data-table";
+import getQuizColumns from "@/features/quizzes/columns/quizzes.columns";
 
 export default function QuizzesPage() {
   const { quizzes, loading, error, total, loadQuizzes, createQuiz, updateQuiz, deleteQuiz } = useQuizzes();
@@ -47,10 +48,24 @@ export default function QuizzesPage() {
     return false;
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Not scheduled";
-    return new Date(dateString).toLocaleDateString();
-  };
+  if (loading && quizzes.length === 0) {
+    return <div className="flex p-8">Loading quizzes...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -73,86 +88,19 @@ export default function QuizzesPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Quiz List</CardTitle>
-          <CardDescription>
-            {total > 0 ? `${total} quizzes found` : "No quizzes yet"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">Loading quizzes...</p>
-            </div>
-          ) : quizzes.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              <div className="text-center">
-                <p className="text-lg font-medium">No quizzes yet</p>
-                <p className="text-sm">Create your first quiz to start grading</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {quizzes.map((quiz) => (
-                <div
-                  key={quiz._id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{quiz.name}</h3>
-                      <Badge
-                        variant={
-                          quiz.status === "active"
-                            ? "default"
-                            : quiz.status === "draft"
-                            ? "secondary"
-                            : quiz.status === "completed"
-                            ? "outline"
-                            : "destructive"
-                        }
-                      >
-                        {quiz.status}
-                      </Badge>
-                    </div>
-                    {quiz.description && (
-                      <p className="mt-1 text-sm text-muted-foreground">{quiz.description}</p>
-                    )}
-                    <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <IconClipboard className="size-4" />
-                        <span>
-                          {quiz.question_count} questions ({quiz.total_points} pts)
-                        </span>
-                      </div>
-                      <span>Template: {quiz.template_id}</span>
-                      {quiz.scheduled_date && (
-                        <div className="flex items-center gap-1">
-                          <IconCalendar className="size-4" />
-                          <span>{formatDate(quiz.scheduled_date)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(quiz)}>
-                      <IconEdit className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(quiz._id, quiz.name)}
-                    >
-                      <IconTrash className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {quizzes.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <p className="text-muted-foreground mb-4">No quizzes yet</p>
+            <Button onClick={handleAdd} variant="outline">
+              <IconPlus className="mr-2 size-4" />
+              Create your first quiz
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <DataTable columns={getQuizColumns({ onEdit: handleEdit, onDelete: handleDelete })} data={quizzes} searchColumn="name" />
+      )}
 
       <QuizFormDialog
         open={dialogOpen}
