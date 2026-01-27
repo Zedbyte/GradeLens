@@ -38,11 +38,11 @@ export default function QuizzesPage() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: unknown) => {
     if (dialogMode === "create") {
-      return await createQuiz(data);
+      return await createQuiz(data as CreateQuizRequest);
     } else if (editingQuiz) {
-      return await updateQuiz(editingQuiz._id, data);
+      return await updateQuiz(editingQuiz._id, data as UpdateQuizRequest);
     }
     return false;
   };
