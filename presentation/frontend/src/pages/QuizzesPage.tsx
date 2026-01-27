@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { IconPlus } from "@tabler/icons-react";
 import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { QuizFormDialog } from "@/features/quizzes/components/QuizFormDialog";
 import type { CreateQuizRequest, Quiz, UpdateQuizRequest } from "@/features/quizzes/types/quizzes.types";
 import DataTable from "@/components/data-table";
 import getQuizColumns from "@/features/quizzes/columns/quizzes.columns";
+import CrudListLayout from "@/components/CrudListLayout";
 
 export default function QuizzesPage() {
-  const { quizzes, loading, error, total, loadQuizzes, createQuiz, updateQuiz, deleteQuiz } = useQuizzes();
+  const { quizzes, loading, error, loadQuizzes, createQuiz, updateQuiz, deleteQuiz } = useQuizzes();
   const { classes, loadClasses } = useClasses();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | undefined>();
@@ -68,39 +67,21 @@ export default function QuizzesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Quizzes</h1>
-          <p className="text-muted-foreground">Create and manage quizzes with answer keys</p>
-        </div>
-        <Button onClick={handleAdd}>
-          <IconPlus className="mr-2 size-4" />
-          Create Quiz
-        </Button>
-      </div>
-
-      {error && (
-        <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <p className="text-sm text-destructive">{error}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {quizzes.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <p className="text-muted-foreground mb-4">No quizzes yet</p>
-            <Button onClick={handleAdd} variant="outline">
-              <IconPlus className="mr-2 size-4" />
-              Create your first quiz
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
+    <>
+      <CrudListLayout
+        title="Quizzes"
+        subtitle="Create and manage quizzes with answer keys"
+        onAdd={handleAdd}
+        addLabel="Create Quiz"
+        isLoading={loading}
+        error={error}
+        itemsLength={quizzes.length}
+        emptyTitle="No quizzes yet"
+        emptyDescription="Create your first quiz to start grading"
+        emptyActionLabel="Create your first quiz"
+      >
         <DataTable columns={getQuizColumns({ onEdit: handleEdit, onDelete: handleDelete })} data={quizzes} searchColumn="name" />
-      )}
+      </CrudListLayout>
 
       <QuizFormDialog
         open={dialogOpen}
@@ -110,6 +91,6 @@ export default function QuizzesPage() {
         mode={dialogMode}
         classes={classes}
       />
-    </div>
+    </>
   );
 }

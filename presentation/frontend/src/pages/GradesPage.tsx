@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { useGrades } from "../features/grades/hooks/useGrades";
 import { GradeFormDialog } from "../features/grades/components/GradeFormDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { IconPlus } from "@tabler/icons-react";
 import type { CreateGradeRequest, Grade, UpdateGradeRequest } from "../features/grades/types/grades.types";
 import DataTable from "@/components/data-table";
 import getGradeColumns from "../features/grades/columns/grades.columns";
+import CrudListLayout from "@/components/CrudListLayout";
 
 export function GradesPage() {
   const { grades, loading, error, loadGrades, createGrade, updateGrade, deleteGrade } = useGrades();
@@ -65,31 +64,21 @@ export function GradesPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Grades</h1>
-          <p className="text-muted-foreground">Manage grade levels for your school</p>
-        </div>
-        <Button onClick={handleCreate}>
-          <IconPlus className="mr-2 h-4 w-4" />
-          Add Grade
-        </Button>
-      </div>
-
-      {grades.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <p className="text-muted-foreground mb-4">No grades yet</p>
-            <Button onClick={handleCreate} variant="outline">
-              <IconPlus className="mr-2 h-4 w-4" />
-              Create your first grade
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
+    <>
+      <CrudListLayout
+        title="Grades"
+        subtitle="Manage grade levels for your school"
+        onAdd={handleCreate}
+        addLabel="Add Grade"
+        isLoading={loading}
+        error={error}
+        itemsLength={grades.length}
+        emptyTitle="No grades yet"
+        emptyDescription="Create your first grade to get started"
+        emptyActionLabel="Create your first grade"
+      >
         <DataTable columns={getGradeColumns({ onEdit: handleEdit, onDelete: handleDelete })} data={grades} searchColumn="name" />
-      )}
+      </CrudListLayout>
 
       <GradeFormDialog
         open={isDialogOpen}
@@ -98,6 +87,6 @@ export function GradesPage() {
         grade={selectedGrade}
         mode={mode}
       />
-    </div>
+    </>
   );
 }

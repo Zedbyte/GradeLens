@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { IconPlus } from "@tabler/icons-react";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { ClassFormDialog } from "@/features/classes/components/ClassFormDialog";
 import { useGrades } from "@/features/grades/hooks/useGrades";
@@ -9,9 +6,10 @@ import { useSections } from "@/features/sections/hooks/useSections";
 import type { Class, CreateClassRequest, UpdateClassRequest } from "@/features/classes/types/classes.types";
 import DataTable from "@/components/data-table";
 import getClassColumns from "@/features/classes/columns/classes.columns";
+import CrudListLayout from "@/components/CrudListLayout";
 
 export default function ClassesPage() {
-  const { classes, loading, error, total, loadClasses, createClass, updateClass, deleteClass } = useClasses();
+  const { classes, loading, error, loadClasses, createClass, updateClass, deleteClass } = useClasses();
   const { grades, loadGrades } = useGrades();
   const { sections, loadSections } = useSections();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,39 +50,21 @@ export default function ClassesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Classes</h1>
-          <p className="text-muted-foreground">Organize students into classes and sections</p>
-        </div>
-        <Button onClick={handleAdd}>
-          <IconPlus className="mr-2 size-4" />
-          Create Class
-        </Button>
-      </div>
-
-      {error && (
-        <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <p className="text-sm text-destructive">{error}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {classes.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <p className="text-muted-foreground mb-4">No classes yet</p>
-            <Button onClick={handleAdd} variant="outline">
-              <IconPlus className="mr-2 size-4" />
-              Create your first class
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
+    <>
+      <CrudListLayout
+        title="Classes"
+        subtitle="Organize students into classes and sections"
+        onAdd={handleAdd}
+        addLabel="Create Class"
+        isLoading={loading}
+        error={error}
+        itemsLength={classes.length}
+        emptyTitle="No classes yet"
+        emptyDescription="Create your first class to organize students"
+        emptyActionLabel="Create your first class"
+      >
         <DataTable columns={getClassColumns({ onEdit: handleEdit, onDelete: handleDelete })} data={classes} searchColumn="name" />
-      )}
+      </CrudListLayout>
 
       <ClassFormDialog
         open={dialogOpen}
@@ -95,6 +75,6 @@ export default function ClassesPage() {
         grades={grades}
         sections={sections}
       />
-    </div>
+    </>
   );
 }
