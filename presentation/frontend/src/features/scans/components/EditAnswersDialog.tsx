@@ -21,6 +21,7 @@ interface EditAnswersDialogProps {
   answers: Answer[];
   editedAnswers: Record<number, string[]>;
   onToggleAnswer: (questionId: number, option: string) => void;
+  isSaving?: boolean;
 }
 
 export function EditAnswersDialog({
@@ -34,6 +35,7 @@ export function EditAnswersDialog({
   answers,
   editedAnswers,
   onToggleAnswer,
+  isSaving = false,
 }: EditAnswersDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -41,19 +43,19 @@ export function EditAnswersDialog({
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle>Edit Answers</DialogTitle>
+              <DialogTitle>Compare Answers</DialogTitle>
               <DialogDescription>
                 Compare detected answers with answer key and make corrections
               </DialogDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mr-5">
               {isEditMode ? (
                 <>
-                  <Button size="sm" variant="outline" onClick={onCancel}>
+                  <Button size="sm" variant="outline" onClick={onCancel} disabled={isSaving}>
                     Cancel
                   </Button>
-                  <Button size="sm" onClick={onSave}>
-                    Save Changes
+                  <Button size="sm" onClick={onSave} disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save Changes"}
                   </Button>
                 </>
               ) : (
@@ -69,7 +71,7 @@ export function EditAnswersDialog({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pr-4">
             {/* Left Column: Answer Key */}
             <div className="space-y-3">
-              <div className="sticky top-0 bg-background z-10 pb-3 border-b">
+              <div className="sticky -top-1 bg-background z-10 pb-3 border-b">
                 <h4 className="text-sm font-semibold">Answer Key</h4>
                 <p className="text-xs text-muted-foreground">Correct answers for this quiz</p>
               </div>
@@ -95,7 +97,7 @@ export function EditAnswersDialog({
 
             {/* Right Column: Answer Comparison with Edit */}
             <div className="space-y-3">
-              <div className="sticky top-0 bg-background z-10 pb-3 border-b">
+              <div className="sticky -top-1 bg-background z-10 pb-3 border-b">
                 <h4 className="text-sm font-semibold">Detected Answers</h4>
                 <p className="text-xs text-muted-foreground">
                   {isEditMode ? "Click options to toggle selection" : "Comparison with answer key"}
@@ -113,6 +115,7 @@ export function EditAnswersDialog({
                   
                   const isCorrect = correctAnswer && currentAnswer.length === 1 && currentAnswer[0] === correctAnswer;
                   const isIncorrect = correctAnswer && currentAnswer.length > 0 && !isCorrect;
+                  const isManuallyEdited = detection.manually_edited;
                   const availableOptions = Object.keys(detection.fill_ratios || {}).sort();
 
                   return (
@@ -121,6 +124,8 @@ export function EditAnswersDialog({
                       className={`relative flex flex-col items-center justify-center rounded-lg border p-2 text-xs transition-all min-h-24 ${
                         isEditMode
                           ? "bg-blue-50 border-blue-300 hover:border-blue-400 hover:shadow-md"
+                          : isManuallyEdited
+                          ? "bg-orange-50 border-orange-300"
                           : isCorrect
                           ? "bg-green-50 border-green-300"
                           : isIncorrect
@@ -131,10 +136,13 @@ export function EditAnswersDialog({
                       {/* Status Indicators */}
                       {!isEditMode && (
                         <>
-                          {isCorrect && (
+                          {isManuallyEdited && (
+                            <IconFilePencil className="absolute top-1 right-1 h-3 w-3 text-orange-600" />
+                          )}
+                          {isCorrect && !isManuallyEdited && (
                             <IconCheck className="absolute top-1 right-1 h-3 w-3 text-green-600" />
                           )}
-                          {isIncorrect && (
+                          {isIncorrect && !isManuallyEdited && (
                             <span className="absolute top-1 right-1 h-3 w-3 text-red-600 font-bold">✗</span>
                           )}
                         </>
@@ -210,6 +218,10 @@ export function EditAnswersDialog({
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded bg-gray-50 border border-gray-300"></div>
                   <span>Unanswered</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded bg-orange-50 border border-orange-300"></div>
+                  <span>Manually Edited</span>
                 </div>
                 {isEditMode && (
                   <div className="flex items-center gap-1">

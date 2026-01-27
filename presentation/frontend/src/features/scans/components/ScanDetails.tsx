@@ -12,21 +12,25 @@ import type { Student } from "@/features/students/types/students.types";
 import { EditAnswersDialog } from "./EditAnswersDialog";
 import { ViewAdvancedDialog } from "./ViewAdvancedDialog";
 import { ScanDetailsContent } from "./ScanDetailsContent";
+import { updateScanAnswersApi, markScanAsReviewedApi } from "../api/scans.api";
 
 interface ScanDetailsProps {
   scan?: Scan;
   quiz?: Quiz;
   student?: Student;
   onSave?: () => void;
+  onRedoScan?: () => void;
   className?: string;
 }
 
-export function ScanDetails({ scan, quiz, student, onSave, className }: ScanDetailsProps) {
+export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className }: ScanDetailsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedAnswers, setEditedAnswers] = useState<Record<number, string[]>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [isMarkingReviewed, setIsMarkingReviewed] = useState(false);
 
   const handleImageError = (imagePath: string) => {
     setFailedImages(prev => new Set(prev).add(imagePath));
@@ -69,10 +73,31 @@ export function ScanDetails({ scan, quiz, student, onSave, className }: ScanDeta
   };
 
   // Save edited answers
-  const handleSaveEdits = () => {
-    // TODO: Send edited answers to backend
-    console.log("Saving edited answers:", editedAnswers);
-    setIsEditMode(false);
+  const handleSaveEdits = async () => {
+    if (!scan) return;
+
+    setIsSaving(true);
+    try {
+      await updateScanAnswersApi(scan.scan_id, { answers: editedAnswers });
+      
+      toast.success("Answers updated", {
+        description: "The scan answers have been successfully updated.",
+      });
+
+      setIsEditMode(false);
+      
+      // Trigger parent refresh
+      if (onSave) {
+        onSave();
+      }
+    } catch (error) {
+      console.error("Failed to save edited answers:", error);
+      toast("Failed to save", {
+        description: error instanceof Error ? error.message : "Failed to update scan answers",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Cancel editing
@@ -80,6 +105,32 @@ export function ScanDetails({ scan, quiz, student, onSave, className }: ScanDeta
     setEditedAnswers({});
     setIsEditMode(false);
     // Don't close the dialog, just exit edit mode
+  };
+
+  // Mark scan as reviewed
+  const handleMarkAsReviewed = async () => {
+    if (!scan) return;
+
+    setIsMarkingReviewed(true);
+    try {
+      await markScanAsReviewedApi(scan.scan_id);
+      
+      toast("Scan marked as reviewed", {
+        description: "The scan has been marked as reviewed.",
+      });
+
+      // Trigger parent refresh
+      if (onSave) {
+        onSave();
+      }
+    } catch (error) {
+      console.error("Failed to mark as reviewed:", error);
+      toast("Failed to mark as reviewed", {
+        description: error instanceof Error ? error.message : "Failed to mark scan as reviewed",
+      });
+    } finally {
+      setIsMarkingReviewed(false);
+    }
   };
 
   if (!scan) {
@@ -194,18 +245,32 @@ export function ScanDetails({ scan, quiz, student, onSave, className }: ScanDeta
         answers={answers}
         editedAnswers={editedAnswers}
         onToggleAnswer={toggleAnswer}
+        isSaving={isSaving}
       />
 
-      {/* Fixed Save Button */}
-      {onSave && (
+      {/* Fixed Action Buttons */}
+      {(onSave || onRedoScan) && (
         <CardContent className="pt-3 pb-4 border-t shrink-0">
-          <Button
-            onClick={onSave}
-            disabled={scan.status !== "detected" && scan.status !== "graded"}
-            className="w-full"
-          >
-            Save Results
-          </Button>
+          <div className="flex gap-2">
+            {onRedoScan && (
+              <Button
+                onClick={onRedoScan}
+                variant="outline"
+                className="flex-1"
+              >
+                Redo Scan
+              </Button>
+            )}
+            {onSave && (
+              <Button
+                onClick={handleMarkAsReviewed}
+                disabled={scan.status === "reviewed" || isMarkingReviewed}
+                className="flex-1"
+              >
+                {isMarkingReviewed ? "Marking..." : "Mark as Reviewed"}
+              </Button>
+            )}
+          </div>
         </CardContent>
       )}
     </Card>

@@ -116,9 +116,28 @@ export function ScanPage() {
     student: students.find(s => s._id === selectedScan.student_id),
   } : undefined;
 
-  const handleSaveScan = () => {
-    console.log("Saving scan:", selectedScan);
-    // TODO: Implement save functionality
+  const handleSaveScan = async () => {
+    // Refresh scans and selected scan after save
+    await loadScans();
+    if (selectedScanId) {
+      // Polling hook will automatically refresh the selected scan
+      console.log("Scan saved, refreshing data");
+    }
+  };
+
+  const handleRedoScan = () => {
+    if (!selectedScan) return;
+    
+    // Pre-fill the quiz and student from the current scan
+    const quiz = quizzes.find(q => q._id === selectedScan.exam_id);
+    const student = students.find(s => s._id === selectedScan.student_id);
+    
+    if (quiz && student) {
+      setSelectedQuiz(quiz._id!);
+      setSelectedStudent(student._id!);
+      // Switch to upload tab for re-scanning
+      setActiveTab("upload");
+    }
   };
 
   const handleLiveCapture = async (imageData: string) => {
@@ -264,6 +283,7 @@ export function ScanPage() {
             quiz={selectedScanDetails?.quiz}
             student={selectedScanDetails?.student}
             onSave={handleSaveScan}
+            onRedoScan={handleRedoScan}
           />
         </div>
       </div>
