@@ -1,56 +1,37 @@
-// import { useState, useEffect } from "react";
-// import { uploadScanApi, fetchScansApi, fetchScanApi } from "../api/scans.api";
-// import type { Scan } from "@packages/types/scans/scans.types";
+// features/scans/hooks/useScans.ts
+import { useScansStore } from "../stores/scans.store";
 
-// export function useScans() {
-//   const [scans, setScans] = useState<Scan[]>([]);
-//   const [selectedScan, setSelectedScan] = useState<Scan | null>(null);
-//   const [loading, setLoading] = useState(false);
+export function useScans() {
+  const scans = useScansStore((state) => state.scans);
+  const selectedScanId = useScansStore((state) => state.selectedScanId);
+  const selectedScan = useScansStore((state) => state.selectedScan);
+  const isLoading = useScansStore((state) => state.isLoading);
+  const isPolling = useScansStore((state) => state.isPolling);
+  const isPollingRequest = useScansStore((state) => (state).isPollingRequest);
+  const error = useScansStore((state) => state.error);
+  
+  const loadScans = useScansStore((state) => state.loadScans);
+  const selectScan = useScansStore((state) => state.selectScan);
+  const deselectScan = useScansStore((state) => state.deselectScan);
+  const uploadScan = useScansStore((state) => state.uploadScan);
+  const updateScanAnswers = useScansStore((state) => state.updateScanAnswers);
+  const markScanAsReviewed = useScansStore((state) => state.markScanAsReviewed);
+  const refreshSelectedScan = useScansStore((state) => state.refreshSelectedScan);
 
-//   const loadScans = async () => {
-//     setLoading(true);
-//     try {
-//       const data = await fetchScansApi();
-//       setScans(data);
-//     } catch (error) {
-//       console.error("Failed to load scans:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const loadScan = async (scanId: string) => {
-//     try {
-//       const data = await fetchScanApi(scanId);
-//       setSelectedScan(data);
-//     } catch (error) {
-//       console.error("Failed to load scan:", error);
-//     }
-//   };
-
-//   const uploadScan = async (base64Image: string) => {
-//     setLoading(true);
-//     try {
-//       await uploadScanApi({ image: base64Image });
-//       await loadScans();
-//     } catch (error) {
-//       console.error("Failed to upload scan:", error);
-//       throw error;
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     loadScans();
-//   }, []);
-
-//   return {
-//     scans,
-//     selectedScan,
-//     loading,
-//     uploadScan,
-//     loadScans,
-//     selectScan: loadScan,
-//   };
-// }
+  return {
+    scans,
+    selectedScanId,
+    selectedScan,
+    isLoading,
+    isPolling,
+    isPollingRequest,
+    error,
+    loadScans,
+    selectScan,
+    deselectScan,
+    uploadScan,
+    updateScanAnswers,
+    markScanAsReviewed,
+    refreshSelectedScan,
+  };
+}

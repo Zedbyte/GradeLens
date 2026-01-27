@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,16 +9,13 @@ import { useClasses } from "@/features/classes/hooks/useClasses";
 import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
 import { useStudents } from "@/features/students/hooks/useStudents";
 import { useTemplate } from "@/hooks/useTemplate";
-import { fetchScansApi } from "../features/scans/api/scans.api";
-import { useScanPolling } from "../features/scans/hooks/useScanPolling";
+import { useScans } from "../features/scans/hooks/useScans";
 import { UploadForm } from "../features/scans/components/UploadForm";
 import { LiveScanner } from "../features/scans/components/LiveScanner";
 import { ScanFilters } from "../features/scans/components/ScanFilters";
 import { AssessmentSelection } from "../features/scans/components/AssessmentSelection";
 import { ScanQueue } from "../features/scans/components/ScanQueue";
 import { ScanDetails } from "../features/scans/components/ScanDetails";
-import { uploadScanApi } from "../features/scans/api/scans.api";
-import type { Scan } from "@packages/types/scans/scans.types.ts";
 
 export function ScanPage() {
   // State for filters
@@ -29,15 +26,17 @@ export function ScanPage() {
   // State for scan workflow
   const [selectedQuiz, setSelectedQuiz] = useState<string>("");
   const [selectedStudent, setSelectedStudent] = useState<string>("");
-  const [scans, setScans] = useState<Scan[]>([]);
-  const [selectedScanId, setSelectedScanId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("upload");
 
-  // Poll selected scan for updates
-  const { scan: selectedScan } = useScanPolling(
+  // Use Zustand store for scans
+  const { 
+    scans, 
+    selectedScan, 
     selectedScanId,
-    !!selectedScanId // Enable polling when scan is selected
-  );
+    loadScans, 
+    selectScan,
+    uploadScan 
+  } = useScans();
 
   // Load data
   const { grades, loadGrades } = useGrades();
@@ -49,14 +48,6 @@ export function ScanPage() {
   // Load template based on selected quiz
   const selectedQuizDetails = quizzes.find(q => q._id === selectedQuiz);
   const { template } = useTemplate(selectedQuizDetails?.template_id);
-
-  const loadScans = useCallback(async () => {
-    setScans(await fetchScansApi());
-  }, []);
-
-  function selectScan(scanId: string) {
-    setSelectedScanId(scanId); // Polling hook will handle fetching
-  }
 
   // Load initial data once on mount
   // Using useRef to ensure functions are called only once and avoid dependency issues
@@ -111,18 +102,10 @@ export function ScanPage() {
 
   // Find selected quiz details
   const quizDetails = quizzes.find(q => q._id === selectedQuiz);
-  const selectedScanDetails = selectedScan ? {
-    quiz: quizzes.find(q => q._id === selectedScan.exam_id),
-    student: students.find(s => s._id === selectedScan.student_id),
-  } : undefined;
 
   const handleSaveScan = async () => {
-    // Refresh scans and selected scan after save
+    // Refresh scans - the store will handle refreshing selected scan automatically
     await loadScans();
-    if (selectedScanId) {
-      // Polling hook will automatically refresh the selected scan
-      console.log("Scan saved, refreshing data");
-    }
   };
 
   const handleRedoScan = () => {
@@ -144,14 +127,14 @@ export function ScanPage() {
     if (!selectedQuiz || !selectedStudent) return;
 
     try {
-      const result = await uploadScanApi({
+      const scanId = await uploadScan({
         image: imageData,
         exam_id: selectedQuiz,
         student_id: selectedStudent,
       });
 
-      await loadScans();
-      selectScan(result.scan_id);
+      // Select the newly uploaded scan (will trigger polling)
+      selectScan(scanId);
       
       // Switch to upload tab to show the queue
       setActiveTab("upload");
@@ -269,7 +252,7 @@ export function ScanPage() {
         <div className="lg:col-span-4">
           <ScanQueue
             scans={scans}
-            selectedScanId={selectedScan?.scan_id}
+            selectedScanId={selectedScanId || undefined}
             onSelect={selectScan}
             quizzes={quizzes}
             students={students}
@@ -279,11 +262,10 @@ export function ScanPage() {
         {/* Scan Details - Larger Column */}
         <div className="lg:col-span-8">
           <ScanDetails
-            scan={selectedScan}
-            quiz={selectedScanDetails?.quiz}
-            student={selectedScanDetails?.student}
             onSave={handleSaveScan}
             onRedoScan={handleRedoScan}
+            quizzes={quizzes}
+            students={students}
           />
         </div>
       </div>

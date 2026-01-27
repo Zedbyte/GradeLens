@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,25 +6,22 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconCheck, IconClock, IconAlertCircle, IconInfoCircle } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { fetchScanApi } from "../api/scans.api";
-import type { Scan } from "@packages/types/scans/scans.types";;
-import type { Quiz } from "@/features/quizzes/types/quizzes.types";
-import type { Student } from "@/features/students/types/students.types";
+import { useScans } from "../hooks/useScans";
 import { EditAnswersDialog } from "./EditAnswersDialog";
 import { ViewAdvancedDialog } from "./ViewAdvancedDialog";
 import { ScanDetailsContent } from "./ScanDetailsContent";
-import { updateScanAnswersApi, markScanAsReviewedApi } from "../api/scans.api";
+import type { Quiz } from "@/features/quizzes";
+import type { Student } from "@/features/students";
 
 interface ScanDetailsProps {
-  scan?: Scan;
-  quiz?: Quiz;
-  student?: Student;
   onSave?: () => void;
   onRedoScan?: () => void;
   className?: string;
+  quizzes?: Quiz[];
+  students?: Student[];
 }
 
-export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className }: ScanDetailsProps) {
+export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }: ScanDetailsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
@@ -33,6 +29,22 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
   const [editedAnswers, setEditedAnswers] = useState<Record<number, string[]>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingReviewed, setIsMarkingReviewed] = useState(false);
+
+  // Get scan from Zustand store
+  const { selectedScan, updateScanAnswers, markScanAsReviewed, isPollingRequest, error } = useScans();
+
+  const lastErrorRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (error && lastErrorRef.current !== error) {
+      toast.error("Scan update failed", { description: error });
+      lastErrorRef.current = error;
+    }
+  }, [error]);
+  
+  // quizzes and students are passed from parent to avoid duplicate hook state
+  const localQuizzes = quizzes || [];
+  const localStudents = students || [];
 
   const handleImageError = (imagePath: string) => {
     setFailedImages(prev => new Set(prev).add(imagePath));
@@ -76,27 +88,18 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
 
   // Save edited answers
   const handleSaveEdits = async () => {
-    if (!scan) return;
+    if (!selectedScan) return;
 
     setIsSaving(true);
     try {
-      await updateScanAnswersApi(scan.scan_id, { answers: editedAnswers });
+      await updateScanAnswers(selectedScan.scan_id, { answers: editedAnswers });
       
       toast.success("Answers updated", {
         description: "The scan answers have been successfully updated.",
       });
 
       setIsEditMode(false);
-      // Refresh the local scan instance so UI reflects updated detection/grading
-      try {
-        const refreshed = await fetchScanApi(scan.scan_id);
-        setLocalScan(refreshed);
-      } catch (err) {
-        console.error("Failed to fetch updated scan:", err);
-      }
-
-      // Close edit dialog after successful save
-      setEditDialogOpen(false);
+      
       
       // Trigger parent refresh
       if (onSave) {
@@ -112,13 +115,6 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
     }
   };
 
-  // Local scan state so we can update the UI immediately after edits
-  const [localScan, setLocalScan] = useState<Scan | undefined>(scan);
-  
-  useEffect(() => {
-    setLocalScan(scan);
-  }, [scan]);
-
   // Cancel editing
   const handleCancelEdit = () => {
     setEditedAnswers({});
@@ -128,11 +124,11 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
 
   // Mark scan as reviewed
   const handleMarkAsReviewed = async () => {
-    if (!scan) return;
+    if (!selectedScan) return;
 
     setIsMarkingReviewed(true);
     try {
-      await markScanAsReviewedApi(scan.scan_id);
+      await markScanAsReviewed(selectedScan.scan_id);
       
       toast("Scan marked as reviewed", {
         description: "The scan has been marked as reviewed.",
@@ -154,6 +150,8 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
 
   // Redo scan: scroll to top, notify user that quiz/student were auto-selected, then invoke parent handler
   const handleRedoClick = () => {
+    if (!selectedScan || !quiz || !student) return;
+
     // Scroll to top of page to emphasize selection
     try {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -174,7 +172,7 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
     if (onRedoScan) onRedoScan();
   };
 
-  if (!scan) {
+  if (!selectedScan) {
     return (
       <Card className={cn(
         "shadow-sm",
@@ -191,11 +189,14 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
     );
   }
 
-  const displayScan = localScan ?? scan;
-  const detections = displayScan?.detection_result?.detections || [];
-  const qualityMetrics = displayScan?.detection_result?.quality_metrics;
-  const warnings = displayScan?.detection_result?.warnings || [];
-  const errors = displayScan?.detection_result?.errors || [];
+  const detections = selectedScan?.detection_result?.detections || [];
+  const qualityMetrics = selectedScan?.detection_result?.quality_metrics;
+  const warnings = selectedScan?.detection_result?.warnings || [];
+  const errors = selectedScan?.detection_result?.errors || [];
+
+  // Find quiz and student for display
+  const quiz = localQuizzes.find(q => q._id === selectedScan.exam_id);
+  const student = localStudents.find(s => s._id === selectedScan.student_id);
 
   // Calculate statistics
   const stats = {
@@ -218,10 +219,10 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
     error: { variant: "destructive" as const, icon: IconAlertCircle, label: "Error" },
   };
 
-  const statusInfo = statusConfig[displayScan?.status as keyof typeof statusConfig] || {
+  const statusInfo = statusConfig[selectedScan?.status as keyof typeof statusConfig] || {
     variant: "secondary" as const,
     icon: IconInfoCircle,
-    label: displayScan?.status || "unknown"
+    label: selectedScan?.status || "unknown"
   };
   const StatusIcon = statusInfo.icon;
 
@@ -235,14 +236,22 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
           <div className="space-y-1.5">
             <CardTitle className="text-lg">Scan Details</CardTitle>
             <CardDescription className="font-mono text-xs">
-              {displayScan?.filename}
+              {selectedScan?.filename}
             </CardDescription>
           </div>
-          
-          <Badge variant={statusInfo.variant}>
-            <StatusIcon className="mr-1 h-3 w-3" />
-            {statusInfo.label}
-          </Badge>
+
+          <div className="flex items-center gap-3">
+            {isPollingRequest && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <IconClock className="h-3 w-3 animate-spin" />
+                <span>Updating…</span>
+              </div>
+            )}
+            <Badge variant={statusInfo.variant}>
+              <StatusIcon className="mr-1 h-3 w-3" />
+              {statusInfo.label}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
 
@@ -252,7 +261,7 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
           <ViewAdvancedDialog
             open={dialogOpen}
             onOpenChange={setDialogOpen}
-            scan={displayScan}
+            scan={selectedScan}
             warnings={warnings}
             qualityMetrics={qualityMetrics}
             statusInfo={statusInfo}
@@ -261,7 +270,7 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
           />
 
           <ScanDetailsContent
-            scan={displayScan}
+            scan={selectedScan}
             quiz={quiz}
             student={student}
             detections={detections}
@@ -306,7 +315,7 @@ export function ScanDetails({ scan, quiz, student, onSave, onRedoScan, className
             {onSave && (
               <Button
                 onClick={handleMarkAsReviewed}
-                disabled={displayScan?.status === "reviewed" || isMarkingReviewed}
+                disabled={selectedScan?.status === "reviewed" || isMarkingReviewed}
                 className="flex-1"
               >
                 {isMarkingReviewed ? "Marking..." : "Mark as Reviewed"}
