@@ -12,6 +12,8 @@ export const API_ROUTES = {
     SCANS: {
         BASE: "/scans",
         BY_ID: (scanId: string) => `/scans/${scanId}`,
+        ANSWERS: (scanId: string) => `/scans/${scanId}/answers`,
+        REVIEWED: (scanId: string) => `/scans/${scanId}/reviewed`,
     },
     STUDENTS: {
         BASE: "/students",

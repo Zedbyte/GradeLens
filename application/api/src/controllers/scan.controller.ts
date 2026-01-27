@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { v4 as uuid } from "uuid";
 import path from "path";
 import fs from "fs";
-import { createScan, listScans, getScan } from "../services/scan.service.ts";
+import { createScan, listScans, getScan, updateScanAnswers, markScanAsReviewed } from "../services/scan.service.ts";
 
 const STORAGE_DIR = process.env.SCAN_STORAGE_DIR || "/data/scans";
 
@@ -50,4 +50,66 @@ export async function getScanById(req: Request, res: Response) {
   const scan = await getScan(scan_id);
   if (!scan) return res.sendStatus(404);
   res.json(scan);
+}
+
+export async function updateScanAnswersController(req: Request, res: Response) {
+  try {
+    const scan_id = Array.isArray(req.params.scan_id) ? req.params.scan_id[0] : req.params.scan_id;
+    const { answers } = req.body;
+
+    if (!answers || typeof answers !== "object") {
+      return res.status(400).json({ error: "answers is required and must be an object" });
+    }
+
+    // Get user ID from authenticated request
+    const user_id = (req as any).user?.id || (req as any).user?._id || "unknown";
+
+    const scan = await updateScanAnswers(scan_id, answers, user_id);
+
+    res.json({
+      scan_id: scan.scan_id,
+      status: scan.status,
+      graded_by: scan.graded_by,
+      graded_at: scan.graded_at
+    });
+  } catch (error) {
+    console.error("Update scan answers error:", error);
+    if (error instanceof Error && error.message.includes("not found")) {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error instanceof Error && error.message.includes("cannot be edited")) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Failed to update scan answers" 
+    });
+  }
+}
+
+// review_notes is optional, it is not being passed from the frontend currently. (01-27-26)
+export async function markAsReviewedController(req: Request, res: Response) {
+  try {
+    const scan_id = Array.isArray(req.params.scan_id) ? req.params.scan_id[0] : req.params.scan_id;
+    const { review_notes } = req.body;
+
+    // Get user ID from authenticated request
+    const user_id = (req as any).user?.id || (req as any).user?._id || "unknown";
+
+    const scan = await markScanAsReviewed(scan_id, user_id, review_notes);
+
+    res.json({
+      scan_id: scan.scan_id,
+      status: scan.status,
+      reviewed_by: scan.reviewed_by,
+      reviewed_at: scan.reviewed_at
+    });
+  } catch (error) {
+    console.error("Mark as reviewed error:", error);
+    if (error instanceof Error && error.message.includes("not found")) {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Failed to mark scan as reviewed" 
+    });
+  }
 }

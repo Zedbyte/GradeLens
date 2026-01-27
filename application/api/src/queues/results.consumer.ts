@@ -111,11 +111,20 @@ export class ResultsConsumer {
 
       logger.info(`Scan ${result.scan_id} updated: status=${scan.status}, detections=${result.detections?.length || 0}`);
 
-      // If detection was successful and we have an exam_id, we could trigger grading here
-      // For now, just log that grading would happen next
+      // Automatically grade the scan after successful detection
       if (scan.status === "detected" && scan.exam_id) {
-        logger.info(`Scan ${result.scan_id} ready for grading with exam ${scan.exam_id}`);
-        // TODO: Trigger grading service
+        try {
+          logger.info(`Auto-grading scan ${result.scan_id} with exam ${scan.exam_id}`);
+          const gradingResult = await gradeDetectionResult(result, scan.exam_id);
+          
+          scan.grading_result = gradingResult;
+          scan.status = gradingResult.needs_manual_review ? "needs_review" : "graded";
+          await scan.save();
+          
+          logger.info(`Scan ${result.scan_id} graded: score=${gradingResult.score.percentage.toFixed(1)}%, status=${scan.status}`);
+        } catch (error) {
+          logger.error(`Failed to grade scan ${result.scan_id}:`, error);
+        }
       }
 
     } catch (error) {

@@ -126,6 +126,14 @@ const ScanSchema = new Schema(
       type: String 
     },
     
+    // Manual grading edits
+    graded_by: { 
+      type: String 
+    },
+    graded_at: { 
+      type: Date 
+    },
+    
     // Audit trail
     logs: [{ 
       timestamp: { type: Date, default: Date.now },

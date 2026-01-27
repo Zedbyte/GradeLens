@@ -28,6 +28,27 @@ export const fetchScanApi = async (scanId: string): Promise<Scan> => {
   return data;
 };
 
+export const updateScanAnswersApi = async (
+  scanId: string,
+  payload: UpdateScanAnswersRequest
+): Promise<UpdateScanAnswersResponse> => {
+  const { data } = await api.patch<UpdateScanAnswersResponse>(
+    `/scans/${scanId}/answers`,
+    payload
+  );
+  return data;
+};
+
+export const markScanAsReviewedApi = async (
+  scanId: string,
+  reviewNotes?: string
+): Promise<{ scan_id: string; status: string; reviewed_by: string; reviewed_at: string }> => {
+  const { data } = await api.patch(`/scans/${scanId}/reviewed`, 
+    { review_notes: reviewNotes }
+  );
+  return data;
+};
+
 export const previewFrameApi = async (
   payload: FramePreviewRequest
 ): Promise<FramePreviewResponse> => {
