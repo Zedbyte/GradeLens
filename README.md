@@ -101,6 +101,11 @@ docker exec -it gradelens-mongo mongosh
 npx tsx src/scripts/seed-admin.ts
 ```
 
+- Export Document
+```bash
+docker exec gradelens-mongo mongosh gradelens --quiet --eval "printjson(db.scans.find().toArray())" > scan_full_pretty.json
+```
+
 ### Frequent Errors
 - Docker sometimes cache the build, especially when installing new packages.
 - Ensure that you installed the package in the correct directory (including if it is installed in dependencies and not devDependencies).
