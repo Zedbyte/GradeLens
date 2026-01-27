@@ -40,9 +40,9 @@ export function ScanDetailsContent({
   return (
     <div className={`space-y-${isDialog ? '6' : '4'}`}>
       {/* Student & Quiz Info */}
-      {(student || quiz) && (
+      {(student || quiz || (scan.grading_result && scan.grading_result.score)) && (
         <div className="rounded-xl  bg-background/60 p-4 shadow-sm border border-border">
-          <div className="text-sm flex gap-3">
+          <div className="text-sm flex gap-3 flex-wrap">
             {student && (
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
@@ -65,6 +65,23 @@ export function ScanDetailsContent({
                 <div>
                   <p className="text-xs text-muted-foreground">Quiz</p>
                   <p className="font-medium leading-tight">{quiz.name}</p>
+                </div>
+              </div>
+            )}
+
+            {scan.grading_result && scan.grading_result.score && (
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600">
+                  <IconCheck size={18} />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Score</p>
+                  <p className="font-medium leading-tight">
+                    {scan.grading_result.score.points_earned}/{scan.grading_result.score.points_possible} pts
+                    <span className="text-xs text-muted-foreground ml-1">
+                      ({scan.grading_result.score.percentage.toFixed(1)}%)
+                    </span>
+                  </p>
                 </div>
               </div>
             )}
@@ -131,36 +148,64 @@ export function ScanDetailsContent({
           <h4 className="text-sm font-semibold">Detected Answers</h4>
           <ScrollArea className={isDialog ? "h-96" : "h-75"}>
             <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 p-2">
-              {detections.map((detection) => (
-                <div
-                  key={detection.question_id}
-                  className={`relative flex flex-col items-center justify-center rounded-lg border p-1 text-xs transition-all hover:shadow-md ${
-                    detection.detection_status === "answered"
-                      ? "bg-green-50 border-green-300 hover:border-green-400"
-                      : detection.detection_status === "ambiguous"
-                      ? "bg-amber-50 border-amber-300 hover:border-amber-400"
-                      : "bg-gray-50 border-gray-300 hover:border-gray-400"
-                  }`}
-                  title={`Confidence: ${((detection.confidence || 0) * 100).toFixed(0)}%`}
-                >
-                  {detection.detection_status === "answered" && (
-                    <IconCheck className="absolute top-1 right-1 h-3 w-3 text-green-600" />
-                  )}
-                  <span className="font-mono font-bold text-sm mb-1">Q{detection.question_id}</span>
-                  {detection.selected.length > 0 ? (
-                    <span className="font-mono font-semibold text-base">
-                      {detection.selected.join(", ")}
+              {detections.map((detection) => {
+                const isManuallyEdited = detection.manually_edited;
+                return (
+                  <div
+                    key={detection.question_id}
+                    className={`relative flex flex-col items-center justify-center rounded-lg border p-1 text-xs transition-all hover:shadow-md ${
+                      isManuallyEdited
+                        ? "bg-orange-50 border-orange-300 hover:border-orange-400"
+                        : detection.detection_status === "answered"
+                        ? "bg-green-50 border-green-300 hover:border-green-400"
+                        : detection.detection_status === "ambiguous"
+                        ? "bg-amber-50 border-amber-300 hover:border-amber-400"
+                        : "bg-gray-50 border-gray-300 hover:border-gray-400"
+                    }`}
+                    title={`Confidence: ${((detection.confidence || 0) * 100).toFixed(0)}%${isManuallyEdited ? ' (Manually Edited)' : ''}`}
+                  >
+                    {detection.detection_status === "answered" && !isManuallyEdited && (
+                      <IconCheck className="absolute top-1 right-1 h-3 w-3 text-green-600" />
+                    )}
+                    {isManuallyEdited && (
+                      <IconFilePencil className="absolute top-1 right-1 h-3 w-3 text-orange-600" />
+                    )}
+                    <span className="font-mono font-bold text-sm mb-1">Q{detection.question_id}</span>
+                    {detection.selected.length > 0 ? (
+                      <span className="font-mono font-semibold text-base">
+                        {detection.selected.join(", ")}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-base">—</span>
+                    )}
+                    <span className="font-mono text-[10px] text-muted-foreground mt-1">
+                      {((detection.confidence || 0) * 100).toFixed(0)}%
                     </span>
-                  ) : (
-                    <span className="text-muted-foreground text-base">—</span>
-                  )}
-                  <span className="font-mono text-[10px] text-muted-foreground mt-1">
-                    {((detection.confidence || 0) * 100).toFixed(0)}%
-                  </span>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
+          
+          {/* Legend */}
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground border-t pt-2 mt-2">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-green-50 border border-green-300"></div>
+              <span>Answered</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-gray-50 border border-gray-300"></div>
+              <span>Unanswered</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-amber-50 border border-amber-300"></div>
+              <span>Ambiguous</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-orange-50 border border-orange-300"></div>
+              <span>Manually Edited</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -173,7 +218,7 @@ export function ScanDetailsContent({
             onClick={onOpenEditDialog}
           >
             <IconFilePencil className="h-4 w-4 mr-2" />
-            Edit Answers
+            Compare Answers
           </Button>
         </div>
       )}
