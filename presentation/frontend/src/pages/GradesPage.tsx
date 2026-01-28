@@ -44,10 +44,6 @@ export function GradesPage() {
     return false;
   };
 
-  if (loading && grades.length === 0) {
-    return <div className="p-8">Loading grades...</div>;
-  }
-
   if (error) {
     return (
       <div className="p-8">

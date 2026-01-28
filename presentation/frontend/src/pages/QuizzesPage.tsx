@@ -47,10 +47,6 @@ export default function QuizzesPage() {
     return false;
   };
 
-  if (loading && quizzes.length === 0) {
-    return <div className="flex p-8">Loading quizzes...</div>;
-  }
-
   if (error) {
     return (
       <div className="p-8">

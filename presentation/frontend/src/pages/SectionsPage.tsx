@@ -47,10 +47,6 @@ export function SectionsPage() {
     return false;
   };
 
-  if (loading && sections.length === 0) {
-    return <div className="p-8">Loading sections...</div>;
-  }
-
   if (error) {
     return (
       <div className="p-8">
