@@ -1,33 +1,53 @@
+// pages/ReportPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGrades } from "@/features/grades/hooks/useGrades";
 import { useClasses } from "@/features/classes/hooks/useClasses";
+import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
+import { useReports } from "@/features/report/hooks/useReports";
 import PLEntries from "@/features/report/components/PLEntries";
-import type { Class as ClassType } from "@/features/classes/types/classes.types";
-import type { Grade as GradeType } from "@/features/grades/types/grades.types";
 import ItemEntries from "@/features/report/components/ItemEntries";
 import SummaryEntries from "@/features/report/components/SummaryEntries";
-import { IconChartBar, IconClipboardList, IconGauge } from "@tabler/icons-react";
+import type { Class as ClassType } from "@/features/classes/types/classes.types";
+import type { Grade as GradeType } from "@/features/grades/types/grades.types";
+import type { Quiz as ExamType } from "@/features/quizzes/types/quizzes.types";
+import {
+  IconChartBar,
+  IconClipboardList,
+  IconGauge,
+} from "@tabler/icons-react";
 
 export default function ReportPage() {
     const [selectedGrade, setSelectedGrade] = useState<string>("");
     const [selectedClass, setSelectedClass] = useState<string>("");
+    const [selectedExam, setSelectedExam] = useState<string>("");
 
     const { grades, loadGrades } = useGrades();
     const { classes, loadClasses } = useClasses();
+    const { quizzes, loadQuizzes } = useQuizzes();
+    const { plData, loading: isLoadingReport, error: reportError, loadPLEntries, reset } = useReports();
 
     useEffect(() => {
         loadGrades();
         loadClasses();
+        loadQuizzes();
         // intentionally run once on mount
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Filter classes by selected grade
     const availableClasses = useMemo(() => {
         if (!selectedGrade) return [] as ClassType[];
+
         function getRefId(ref: unknown): string | undefined {
         if (typeof ref === "string") return ref;
         if (ref && typeof ref === "object") {
@@ -43,20 +63,49 @@ export default function ReportPage() {
         }) as ClassType[];
     }, [classes, selectedGrade]);
 
+    // Filter exams by selected class
+    const availableExams = useMemo(() => {
+        if (!selectedClass) return [] as ExamType[];
+
+        return quizzes.filter((e: ExamType) => {
+        // Handle exam.class_id being ObjectId or string
+        const examClassId =
+            typeof e.class_id === "string"
+            ? e.class_id
+            : e.class_id?._id || e.class_id;
+        return examClassId === selectedClass;
+        }) as ExamType[];
+    }, [quizzes, selectedClass]);
+
     const handleGradeChange = (value: string) => {
         setSelectedGrade(value);
         setSelectedClass("");
+        setSelectedExam("");
+        reset();
     };
 
-    const isReady = Boolean(selectedGrade && selectedClass);
+    const handleClassChange = (value: string) => {
+        setSelectedClass(value);
+        setSelectedExam("");
+        reset();
+    };
 
-    const currentClass = useMemo(() => classes.find((c: ClassType) => c._id === selectedClass), [classes, selectedClass]);
+    const handleExamChange = (value: string) => {
+        setSelectedExam(value);
+        reset();
+    };
 
-    const sectionIds: string[] = useMemo(() => {
-        if (!currentClass) return [];
-        if (Array.isArray(currentClass.section_ids)) return currentClass.section_ids || [];
-        return [];
-    }, [currentClass]);
+    const isReady = Boolean(selectedGrade && selectedClass && selectedExam);
+
+    const handleGenerateReport = async () => {
+        if (!isReady) return;
+
+        await loadPLEntries({
+        grade_id: selectedGrade,
+        class_id: selectedClass,
+        exam_id: selectedExam,
+        });
+    };
 
     return (
         <div className="min-h-screen bg-linear-to-br from-background via-background to-secondary/10">
@@ -65,8 +114,12 @@ export default function ReportPage() {
             <div className="mb-8">
             <div className="flex items-center justify-between">
                 <div>
-                <h1 className="text-4xl font-bold tracking-tight text-foreground">Assessment Report</h1>
-                <p className="mt-2 text-base text-muted-foreground">Comprehensive analysis of student performance across all sections</p>
+                <h1 className="text-4xl font-bold tracking-tight text-foreground">
+                    Assessment Report
+                </h1>
+                <p className="mt-2 text-base text-muted-foreground">
+                    Comprehensive analysis of student performance across all sections
+                </p>
                 </div>
             </div>
             </div>
@@ -74,78 +127,141 @@ export default function ReportPage() {
             {/* Filters Section */}
             <Card className="mb-8 border-border bg-card/50 backdrop-blur-sm">
             <CardContent className="pt-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="flex gap-4">
-                        <div className="flex flex-col gap-2 min-w-50">
-                            <label className="text-sm font-semibold text-foreground">Grade</label>
-                            <Select value={selectedGrade} onValueChange={handleGradeChange}>
-                            <SelectTrigger className="bg-background w-full">
-                                <SelectValue placeholder="Select a grade" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {grades.map((g: GradeType) => (
-                                    <SelectItem key={g._id} value={g._id}>{g.name || g._id}</SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex flex-col gap-2 min-w-50">
-                            <label className="text-sm font-semibold text-foreground">Class</label>
-                            <Select value={selectedClass} onValueChange={setSelectedClass} disabled={!selectedGrade}>
-                            <SelectTrigger className="bg-background w-full">
-                                <SelectValue placeholder="Select a class" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableClasses.map((classItem: ClassType) => (
-                                <SelectItem key={classItem._id} value={classItem._id}>{classItem.name || classItem.class_id || classItem._id}</SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                        </div>
+                <div className="grid gap-4 grid-cols-1 2xl:grid-cols-2">
+                <div className="flex gap-4">
+                    <div className="flex flex-col gap-2 2xl:min-w-50">
+                    <label className="text-sm font-semibold text-foreground">
+                        Grade
+                    </label>
+                    <Select value={selectedGrade} onValueChange={handleGradeChange}>
+                        <SelectTrigger className="bg-background w-full">
+                        <SelectValue placeholder="Select a grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {grades.map((g: GradeType) => (
+                            <SelectItem key={g._id} value={g._id}>
+                            {g.name || g._id}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className="flex flex-1 flex-col gap-2">
-                            <label className="text-sm font-semibold text-foreground">Academic Year</label>
-                            <div className="rounded-md border border-border bg-background px-3 py-2 text-sm">2024-2025</div>
-                        </div>
+                    <div className="flex flex-col gap-2 2xl:min-w-50">
+                    <label className="text-sm font-semibold text-foreground">
+                        Class
+                    </label>
+                    <Select
+                        value={selectedClass}
+                        onValueChange={handleClassChange}
+                        disabled={!selectedGrade}
+                    >
+                        <SelectTrigger className="bg-background w-full">
+                        <SelectValue placeholder="Select a class" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {availableClasses.map((classItem: ClassType) => (
+                            <SelectItem key={classItem._id} value={classItem._id}>
+                            {classItem.name ||
+                                classItem.class_id ||
+                                classItem._id}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    </div>
 
-                        <div className="flex flex-1 items-end">
-                            <Button disabled={!isReady} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Generate Report</Button>
-                        </div>
+                    <div className="flex flex-col gap-2 2xl:min-w-50">
+                    <label className="text-sm font-semibold text-foreground">
+                        Exam
+                    </label>
+                    <Select
+                        value={selectedExam}
+                        onValueChange={handleExamChange}
+                        disabled={!selectedClass}
+                    >
+                        <SelectTrigger className="bg-background w-full">
+                        <SelectValue placeholder="Select an exam" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {availableExams.map((exam: ExamType) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                            {exam.name || exam.exam_id || exam._id}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
                     </div>
                 </div>
+
+                <div className="flex gap-4">
+                    <div className="flex flex-1 flex-col gap-2">
+                    <label className="text-sm font-semibold text-foreground">
+                        Academic Year
+                    </label>
+                    <div className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+                        2024-2025
+                    </div>
+                    </div>
+
+                    <div className="flex flex-1 items-end">
+                    <Button
+                        disabled={!isReady || isLoadingReport}
+                        onClick={handleGenerateReport}
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                        {isLoadingReport ? "Generating..." : "Generate Report"}
+                    </Button>
+                    </div>
+                </div>
+                </div>
+
+                {reportError && (
+                <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                    <p className="text-sm text-destructive">{reportError}</p>
+                </div>
+                )}
             </CardContent>
             </Card>
 
-            {isReady && (
+            {/* Tabs - Always visible after first generation attempt */}
+            {(plData || isLoadingReport || reportError) && (
             <Tabs defaultValue="pl-entries" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="pl-entries">
-                        <IconGauge />
-                        PL-Entries
-                    </TabsTrigger>
-                    <TabsTrigger value="item-entries">
-                        <IconChartBar />
-                        Item-Entries
-                    </TabsTrigger>
-                    <TabsTrigger value="summary">
-                        <IconClipboardList />
-                        Summary
-                    </TabsTrigger>
+                <TabsTrigger value="pl-entries">
+                    <IconGauge className="w-4 h-4 mr-2" />
+                    PL-Entries
+                </TabsTrigger>
+                <TabsTrigger value="item-entries">
+                    <IconChartBar className="w-4 h-4 mr-2" />
+                    Item-Entries
+                </TabsTrigger>
+                <TabsTrigger value="summary">
+                    <IconClipboardList className="w-4 h-4 mr-2" />
+                    Summary
+                </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="pl-entries" className="mt-6">
-                <PLEntries sectionIds={sectionIds} classId={selectedClass} />
+                <PLEntries
+                    sections={plData?.sections || []}
+                    isLoading={isLoadingReport}
+                    error={reportError}
+                />
                 </TabsContent>
 
                 <TabsContent value="item-entries" className="mt-6">
-                <ItemEntries sectionIds={sectionIds} classId={selectedClass} />
+                <ItemEntries
+                    sectionIds={[]}
+                    classId={selectedClass}
+                />
                 </TabsContent>
 
                 <TabsContent value="summary" className="mt-6">
-                <SummaryEntries sectionIds={sectionIds} classId={selectedClass} />
+                <SummaryEntries
+                    sectionIds={[]}
+                    classId={selectedClass}
+                />
                 </TabsContent>
             </Tabs>
             )}

@@ -1,68 +1,213 @@
+// controllers/ReportController.ts
 import { Request, Response, NextFunction } from "express";
 import { ExamModel } from "../models/Exam.ts";
 import { ScanModel } from "../models/Scan.ts";
 import { ClassModel } from "../models/Class.ts";
+import { SectionModel } from "../models/Section.ts";
+import { StudentModel } from "../models/Student.ts";
+import { Types } from "mongoose";
 
 /**
  * Report Controller
- * Provides aggregated reporting endpoints for quizzes and classes
+ * Provides aggregated reporting endpoints for PL (Performance Level) analysis
  */
 export class ReportController {
-  /**
-   * GET /api/reports/quiz-statistics
-   * Returns per-quiz aggregated statistics for the current user
-   */
-  static async listQuizStatistics(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    /**
+     * GET /api/reports/pl-entries
+     * Returns per-section performance level statistics
+     * 
+     * Query params:
+     * - grade_id: string (required)
+     * - class_id: string (required)
+     * - exam_id: string (required)
+     */
+    static async getPLEntries(req: Request, res: Response, next: NextFunction) {
+        try {
+        const { grade_id, class_id, exam_id } = req.query;
 
-      // Find quizzes created by user
-      const quizzes = await ExamModel.find({ created_by: userId, is_active: true }).lean();
+        // Validate required parameters
+        if (!grade_id || !class_id || !exam_id) {
+            return res.status(400).json({ 
+                error: "Missing required parameters: grade_id, class_id, exam_id" 
+            });
+        }
 
-      const results = await Promise.all(
-        quizzes.map(async (quiz: any) => {
-          const scans = await ScanModel.find({ exam_id: quiz._id }).lean();
-          const totalScans = scans.length;
-          const gradedScans = scans.filter((s: any) => s.status === "graded").length;
-          const needsReview = scans.filter((s: any) => s.status === "needs_review").length;
+        const classObjectId = new Types.ObjectId(class_id as string);
+        const examObjectId = new Types.ObjectId(exam_id as string);
 
-          const scores = scans
-            .filter((s: any) => s.grading_result?.score !== undefined)
-            .map((s: any) => s.grading_result.score);
+        // Fetch and validate class
+        const classDoc = await ClassModel.findById(classObjectId).lean();
+        if (!classDoc) {
+            return res.status(404).json({ error: "Class not found" });
+        }
 
-          const averageScore = scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : 0;
-          const averagePercentage = quiz.total_points ? (averageScore / quiz.total_points) * 100 : 0;
-          const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
-          const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
+        // Fetch and validate exam
+        const examDoc = await ExamModel.findById(examObjectId).lean();
+        if (!examDoc) {
+            return res.status(404).json({ error: "Exam not found" });
+        }
 
-          let completionRate = 0;
-          if (quiz.class_id) {
-            const classDoc = await ClassModel.findById(quiz.class_id).lean();
-            if (classDoc && Array.isArray(classDoc.student_ids) && classDoc.student_ids.length > 0) {
-              completionRate = (totalScans / classDoc.student_ids.length) * 100;
+        // Validate exam belongs to selected class (optional but recommended)
+        if (examDoc.class_id && !examDoc.class_id.equals(classObjectId)) {
+            return res.status(400).json({ 
+            error: "Selected exam does not belong to the selected class" 
+            });
+        }
+
+        // Get section_ids from class
+        const sectionIds = classDoc.section_ids || [];
+        if (sectionIds.length === 0) {
+            return res.json({ sections: [] });
+        }
+
+        // Fetch all sections
+        const sections = await SectionModel.find({
+            _id: { $in: sectionIds },
+            is_active: true
+        }).lean();
+
+        if (sections.length === 0) {
+            return res.json({ sections: [] });
+        }
+
+        // Get total points from exam
+        const totalPoints = examDoc.total_points || 0;
+        if (totalPoints === 0) {
+            return res.status(400).json({ 
+            error: "Exam has no total_points defined" 
+            });
+        }
+
+        // Process each section
+        const sectionResults = await Promise.all(
+            sections.map(async (section) => {
+            // We need students that truly belong to this section.
+            // Rule:
+            //  - Prefer students where `section_id === section._id`.
+            //  - If a student has no `section_id` but belongs to the class via `class_ids`, include them (unsectioned students attached to class).
+            //  - Do NOT include students from other sections just because they share the same class.
+            const studentQuery = {
+                $and: [
+                {
+                    $or: [
+                    { section_id: section._id },
+                    {
+                        $and: [
+                        { section_id: { $exists: false } },
+                        { class_ids: classObjectId }
+                        ]
+                    }
+                    ]
+                },
+                {
+                    $or: [
+                    { is_active: true },
+                    { status: "active" }
+                    ]
+                }
+                ]
+            };
+
+            const students = await StudentModel.find(studentQuery).lean();
+            const studentIds = students.map((s) => s._id);
+
+            // Edge case: no students in section
+            if (studentIds.length === 0) {
+                return {
+                section_id: section._id.toString(),
+                section_name: section.name || section.section_id || "Unnamed Section",
+                statistics: {
+                    mean: 0,
+                    pl_percentage: 0,
+                    mps: 0,
+                    total_f: 0,
+                    total_fx: 0
+                },
+                distribution: [],
+                metadata: {
+                    total_points: totalPoints,
+                    student_count: 0,
+                    scan_count: 0
+                }
+                };
             }
-          }
 
-          return {
-            quiz_id: quiz._id,
-            exam_id: quiz.exam_id,
-            name: quiz.name,
-            total_scans: totalScans,
-            graded_scans: gradedScans,
-            needs_review: needsReview,
-            average_score: averageScore,
-            average_percentage: averagePercentage,
-            highest_score: highestScore,
-            lowest_score: lowestScore,
-            completion_rate: completionRate,
-          };
-        })
-      );
+            // Fetch all graded scans for this exam and these students
+            const scans = await ScanModel.find({
+                exam_id: examObjectId,
+                student_id: { $in: studentIds },
+                status: "graded",
+                "grading_result.score.points_earned": { $exists: true, $type: "number" }
+            }).lean();
 
-      res.json({ reports: results });
-    } catch (error) {
-      next(error);
+            // Extract scores
+            const scores: number[] = [];
+            for (const scan of scans) {
+                const pointsEarned = scan.grading_result?.score?.points_earned;
+                if (typeof pointsEarned === "number" && !isNaN(pointsEarned)) {
+                scores.push(pointsEarned);
+                }
+            }
+
+            // Compute distribution across full range 0..totalPoints
+            const distribution = computeDistribution(scores, totalPoints);
+
+            // Calculate statistics (only count non-zero frequencies)
+            const totalF = distribution.reduce((sum, row) => sum + row.f, 0);
+            const totalFx = distribution.reduce((sum, row) => sum + row.fx, 0);
+            const mean = totalF > 0 ? totalFx / totalF : 0;
+            const pl = totalPoints > 0 ? (mean / totalPoints) * 100 : 0;
+            const mps = (100 - pl) * 0.02 + pl;
+
+            return {
+                section_id: section._id.toString(),
+                section_name: section.name || section.section_id || "Unnamed Section",
+                statistics: {
+                mean: parseFloat(mean.toFixed(2)),
+                pl_percentage: parseFloat(pl.toFixed(2)),
+                mps: parseFloat(mps.toFixed(2)),
+                total_f: totalF,
+                total_fx: totalFx
+                },
+                distribution: distribution.map((row) => ({
+                score: row.score,
+                f: row.f,
+                fx: row.fx
+                })),
+                metadata: {
+                total_points: totalPoints,
+                student_count: studentIds.length,
+                scan_count: scans.length
+                }
+            };
+            })
+        );
+
+        res.json({ sections: sectionResults });
+        } catch (error) {
+        next(error);
+        }
     }
-  }
+}
+
+/**
+ * Helper function to compute score distribution
+ * Groups scores and calculates frequency (f) and frequency × score (fx)
+ */
+function computeDistribution(scores: number[], totalPoints: number): Array<{ score: number; f: number; fx: number }> {
+    // Build frequency map (rounded integer scores)
+    const freq = new Map<number, number>();
+    for (const s of scores) {
+        const key = Math.round(s);
+        freq.set(key, (freq.get(key) || 0) + 1);
+    }
+
+    // Build full distribution from totalPoints down to 0 so UI always shows full range
+    const out: Array<{ score: number; f: number; fx: number }> = [];
+    for (let score = totalPoints; score >= 0; score--) {
+        const f = freq.get(score) || 0;
+        out.push({ score, f, fx: f * score });
+    }
+
+    return out;
 }
