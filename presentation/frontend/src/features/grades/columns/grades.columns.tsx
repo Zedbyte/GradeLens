@@ -21,10 +21,6 @@ export function getGradeColumns({ onEdit, onDelete }: GradeColumnActions): Colum
       cell: ({ row }) => <div>{row.getValue("level")}</div>,
     },
     {
-      accessorKey: "grade_id",
-      header: "ID",
-    },
-    {
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("description")}</div>,

@@ -9,18 +9,18 @@ import { Types } from "mongoose";
  */
 
 export interface CreateSectionRequest {
-  section_id: string;
+  section_id?: string;
   name: string;
   description?: string;
   grade_id?: string;
-  capacity?: number;
+  // capacity removed
 }
 
 export interface UpdateSectionRequest {
   name?: string;
   description?: string;
   grade_id?: string;
-  capacity?: number;
+  // capacity removed
 }
 
 export class SectionController {
@@ -37,10 +37,24 @@ export class SectionController {
 
       const data: CreateSectionRequest = req.body;
 
-      // Check if section_id already exists
-      const existing = await SectionModel.findOne({ section_id: data.section_id });
-      if (existing) {
-        return res.status(409).json({ error: "Section ID already exists" });
+      // If section_id provided, ensure uniqueness; otherwise auto-generate
+      if (data.section_id) {
+        const existing = await SectionModel.findOne({ section_id: data.section_id });
+        if (existing) {
+          return res.status(409).json({ error: "Section ID already exists" });
+        }
+      } else {
+        // Generate a slug-like section_id from the name and ensure uniqueness
+        const base = data.name.replace(/\s+/g, '-').toUpperCase().replace(/[^A-Z0-9\-]/g, '');
+        let candidate = (base || 'SEC') + '-' + Date.now().toString().slice(-4);
+        let exists = await SectionModel.findOne({ section_id: candidate });
+        let idx = 1;
+        while (exists) {
+          candidate = `${base || 'SEC'}-${Date.now().toString().slice(-4)}${idx}`;
+          exists = await SectionModel.findOne({ section_id: candidate });
+          idx += 1;
+        }
+        data.section_id = candidate;
       }
 
       // Verify grade exists if provided

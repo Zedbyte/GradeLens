@@ -24,10 +24,24 @@ export class QuizController {
 
       const data: CreateQuizRequest = req.body;
 
-      // Check if exam_id already exists
-      const existing = await ExamModel.findOne({ exam_id: data.exam_id });
-      if (existing) {
-        return res.status(409).json({ error: "Quiz ID already exists" });
+      // Auto-generate exam_id if not provided
+      if (!data.exam_id) {
+        const base = data.name.split(" ")[0].toUpperCase().replace(/[^A-Z0-9]/g, "");
+        let candidate = base || `QUIZ${Date.now().toString().slice(-5)}`;
+        let exists = await ExamModel.findOne({ exam_id: candidate });
+        let idx = 1;
+        while (exists) {
+          candidate = `${base || 'QUIZ'}${Date.now().toString().slice(-5)}${idx}`;
+          exists = await ExamModel.findOne({ exam_id: candidate });
+          idx += 1;
+        }
+        data.exam_id = candidate;
+      } else {
+        // Check if exam_id already exists when provided
+        const existing = await ExamModel.findOne({ exam_id: data.exam_id });
+        if (existing) {
+          return res.status(409).json({ error: "Quiz ID already exists" });
+        }
       }
 
       // Verify class exists if provided

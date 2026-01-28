@@ -9,7 +9,6 @@ export interface Section {
     name: string;
     level: number;
   } | string;
-  capacity?: number;
   is_active: boolean;
   created_by: string;
   createdAt: string;
@@ -17,18 +16,18 @@ export interface Section {
 }
 
 export interface CreateSectionRequest {
-  section_id: string;
+  section_id?: string;
   name: string;
   description?: string;
   grade_id?: string;
-  capacity?: number;
+  // capacity removed
 }
 
 export interface UpdateSectionRequest {
   name?: string;
   description?: string;
   grade_id?: string;
-  capacity?: number;
+  // capacity removed
 }
 
 export interface SectionListResponse {

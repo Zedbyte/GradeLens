@@ -24,7 +24,6 @@ const answerSchema = z.object({
 });
 
 const quizSchema = z.object({
-  exam_id: z.string().min(1, "Quiz ID is required"),
   name: z.string().min(1, "Quiz name is required"),
   description: z.string().optional(),
   template_id: z.enum(["form_A", "form_B", "form_60q"]),
@@ -92,7 +91,6 @@ export function QuizFormDialog({
 
   useEffect(() => {
     if (quiz && mode === "edit") {
-      setValue("exam_id", quiz.exam_id);
       setValue("name", quiz.name);
       setValue("description", quiz.description || "");
       setValue("template_id", quiz.template_id);
@@ -115,7 +113,6 @@ export function QuizFormDialog({
       }
     } else {
       reset({
-        exam_id: "",
         name: "",
         description: "",
         template_id: "form_A",
@@ -179,20 +176,7 @@ export function QuizFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="exam_id">
-              Quiz ID <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="exam_id"
-              {...register("exam_id")}
-              placeholder="e.g., QUIZ-001, MIDTERM-2024"
-              disabled={mode === "edit"}
-            />
-            {errors.exam_id && (
-              <p className="text-sm text-destructive">{errors.exam_id.message}</p>
-            )}
-          </div>
+          {/* Quiz ID is auto-generated on the backend; no input required */}
 
           <div className="space-y-2">
             <Label htmlFor="name">

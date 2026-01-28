@@ -11,7 +11,7 @@ export interface Grade {
 }
 
 export interface CreateGradeRequest {
-  grade_id: string;
+  grade_id?: string;
   name: string;
   level: number;
   description?: string;

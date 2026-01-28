@@ -25,10 +25,6 @@ export function getClassColumns({ onEdit, onDelete }: ClassColumnActions): Colum
       header: "Academic Year",
     },
     {
-      accessorKey: "subject",
-      header: "Subject",
-    },
-    {
       accessorKey: "student_count",
       header: "Students",
       cell: ({ row }) => <div className="flex items-center gap-2"><IconUsers className="size-4" />{row.getValue("student_count") ?? 0}</div>

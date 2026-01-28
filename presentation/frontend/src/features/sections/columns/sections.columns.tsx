@@ -34,10 +34,6 @@ export function getSectionColumns({ onEdit, onDelete, grades = [] }: SectionColu
       cell: ({ row }) => <div>{getGradeName(row.getValue("grade_id"))}</div>,
     },
     {
-      accessorKey: "capacity",
-      header: "Capacity",
-    },
-    {
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("description")}</div>,

@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import type { Grade } from "../types/grades.types";
 
 const gradeSchema = z.object({
-  grade_id: z.string().min(1, "Grade ID is required"),
   name: z.string().min(1, "Name is required"),
   level: z.number().min(1, "Level must be at least 1").max(20, "Level must be at most 20"),
   description: z.string().optional(),
@@ -51,13 +50,11 @@ export function GradeFormDialog({
 
   useEffect(() => {
     if (grade && mode === "edit") {
-      setValue("grade_id", grade.grade_id);
       setValue("name", grade.name);
       setValue("level", grade.level);
       setValue("description", grade.description || "");
     } else {
       reset({
-        grade_id: "",
         name: "",
         level: 7,
         description: "",
@@ -86,20 +83,7 @@ export function GradeFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="grade_id">
-              Grade ID <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="grade_id"
-              {...register("grade_id")}
-              placeholder="e.g., G7, G8, G9"
-              disabled={mode === "edit"}
-            />
-            {errors.grade_id && (
-              <p className="text-sm text-destructive">{errors.grade_id.message}</p>
-            )}
-          </div>
+          {/* Grade ID is auto-generated on the backend; no input required */}
 
           <div className="space-y-2">
             <Label htmlFor="name">

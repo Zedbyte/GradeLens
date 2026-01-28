@@ -12,7 +12,6 @@ export interface ISection {
   name: string;                  // Display name (e.g., "Section A", "Einstein")
   description?: string;
   grade_id?: Types.ObjectId;     // Optional: Link section to a specific grade
-  capacity?: number;             // Optional: Maximum students
   is_active: boolean;
   created_by: string;            // User ID who created this section
   created_at?: Date;
@@ -52,10 +51,7 @@ const SectionSchema = new Schema<ISection, ISectionModel, ISectionMethods>(
       ref: "Grade",
       index: true
     },
-    capacity: {
-      type: Number,
-      min: 1
-    },
+    // capacity removed
     is_active: {
       type: Boolean,
       default: true,

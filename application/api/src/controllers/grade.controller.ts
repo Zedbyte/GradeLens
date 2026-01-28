@@ -8,7 +8,7 @@ import type { Types } from "mongoose";
  */
 
 export interface CreateGradeRequest {
-  grade_id: string;
+  grade_id?: string;
   name: string;
   level: number;
   description?: string;
@@ -34,10 +34,25 @@ export class GradeController {
 
       const data: CreateGradeRequest = req.body;
 
-      // Check if grade_id already exists
-      const existingId = await GradeModel.findOne({ grade_id: data.grade_id });
-      if (existingId) {
-        return res.status(409).json({ error: "Grade ID already exists" });
+      // Auto-generate grade_id if not provided
+      if (!data.grade_id) {
+        const base = data.name.split(" ")[0].toUpperCase().replace(/[^A-Z0-9]/g, "");
+        let candidate = base || `G${Date.now().toString().slice(-4)}`;
+        // Ensure uniqueness
+        let exists = await GradeModel.findOne({ grade_id: candidate });
+        let idx = 1;
+        while (exists) {
+          candidate = `${base || 'G'}${Date.now().toString().slice(-4)}${idx}`;
+          exists = await GradeModel.findOne({ grade_id: candidate });
+          idx += 1;
+        }
+        data.grade_id = candidate;
+      } else {
+        // Check if grade_id already exists when provided
+        const existingId = await GradeModel.findOne({ grade_id: data.grade_id });
+        if (existingId) {
+          return res.status(409).json({ error: "Grade ID already exists" });
+        }
       }
 
       // Check if level already exists

@@ -54,7 +54,7 @@ export interface Quiz {
 }
 
 export interface CreateQuizRequest {
-  exam_id: string;
+  exam_id?: string;
   template_id: string;
   name: string;
   description?: string;
