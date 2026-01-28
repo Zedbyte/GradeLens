@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
+import { Loading } from "@/components/loading";
 
 type Props = {
     title: string;
@@ -55,7 +56,7 @@ export function CrudListLayout({
             </CardContent>
             </Card>
         ) : isLoading && itemsLength === 0 ? (
-            <div className="p-8">Loading...</div>
+            <div className="p-8"><Loading text="Loading..." /></div>
         ) : itemsLength === 0 ? (
             <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
