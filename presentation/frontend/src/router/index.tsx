@@ -6,6 +6,7 @@ import ClassesPage from "@/pages/ClassesPage";
 import QuizzesPage from "@/pages/QuizzesPage";
 import { GradesPage } from "@/pages/GradesPage";
 import { SectionsPage } from "@/pages/SectionsPage";
+import ReportsPage from "@/pages/ReportsPage";
 import { ProtectedRoute } from "./guards/ProtectedRoute";
 import { PublicRoute } from "./guards/PublicRoute";
 import { AppLayout } from "@/layouts/AppLayout";
@@ -75,6 +76,17 @@ export function AppRouter() {
                 <ProtectedRoute>
                 <AppLayout>
                     <QuizzesPage />
+                </AppLayout>
+                </ProtectedRoute>
+            }
+            />
+
+            <Route
+            path={ROUTES.REPORTS}
+            element={
+                <ProtectedRoute>
+                <AppLayout>
+                    <ReportsPage />
                 </AppLayout>
                 </ProtectedRoute>
             }

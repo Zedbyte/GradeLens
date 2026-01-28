@@ -7,6 +7,7 @@ import classRoutes from "./classes.ts";
 import quizRoutes from "./quizzes.ts";
 import gradeRoutes from "./grades.ts";
 import sectionRoutes from "./sections.ts";
+import reportRoutes from "./reports.ts";
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use(classRoutes);
 router.use(quizRoutes);
 router.use(gradeRoutes);
 router.use(sectionRoutes);
+router.use(reportRoutes);
 
 export default router;

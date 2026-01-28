@@ -69,8 +69,8 @@ const navMain = [
     icon: IconCategory,
   },
   {
-    title: "Report (Summary)", //This includes per student summary, mean-pl etc.
-    url: '#',
+    title: "Reports & Analytics", //This includes per student summary, mean-pl etc.
+    url: ROUTES.REPORTS,
     icon: IconFileAnalytics,
   },
   {

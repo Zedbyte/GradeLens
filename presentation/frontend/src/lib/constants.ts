@@ -7,6 +7,7 @@ export const ROUTES = {
   QUIZZES: "/quizzes",
   GRADES: "/grades",
   SECTIONS: "/sections",
+  REPORTS: "/reports",
 } as const;
 
 export const QUERY_KEYS = {
