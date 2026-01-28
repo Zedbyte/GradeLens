@@ -16,6 +16,7 @@ import { ScanFilters } from "../features/scans/components/ScanFilters";
 import { AssessmentSelection } from "../features/scans/components/AssessmentSelection";
 import { ScanQueue } from "../features/scans/components/ScanQueue";
 import { ScanDetails } from "../features/scans/components/ScanDetails";
+import type { Class } from "@/features/classes";
 
 export function ScanPage() {
   // State for filters
@@ -88,7 +89,20 @@ export function ScanPage() {
   // Filter classes by selected grade/section
   const filteredClasses = classes.filter(c => {
     if (selectedGrade && c.grade_id !== selectedGrade) return false;
-    if (selectedSection && c.section_id !== selectedSection) return false;
+    if (selectedSection) {
+      // Class may belong to multiple sections (section_ids array)
+      // support both new `section_ids` and possible legacy `section_id` fields
+      const sectionIds: string[]  = Array.isArray((c as Class).section_ids)
+        ? ((c as Class).section_ids as string[])
+        : [];
+
+      if (sectionIds.length > 0) {
+        if (!sectionIds.includes(selectedSection)) return false;
+      } else {
+        // no section info on class, exclude when a section is selected
+        return false;
+      }
+    }
     return true;
   });
 
