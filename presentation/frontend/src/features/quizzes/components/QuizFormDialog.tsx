@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -26,7 +26,7 @@ const answerSchema = z.object({
 const quizSchema = z.object({
   name: z.string().min(1, "Quiz name is required"),
   description: z.string().optional(),
-  template_id: z.enum(["form_A", "form_B", "form_60q"]),
+  template_id: z.string(),
   class_id: z.string().min(1, "Class is required"),
   scheduled_date: z.string().optional(),
   due_date: z.string().optional(),
@@ -64,10 +64,10 @@ export function QuizFormDialog({
     setValue,
     watch,
   } = useForm<QuizFormData>({
-    resolver: zodResolver(quizSchema),
+    resolver: zodResolver(quizSchema) as unknown as Resolver<QuizFormData>,
     defaultValues: {
       status: "draft",
-      template_id: "form_A",
+      template_id: "form_60q",
       answers: [],
     },
   });
@@ -94,7 +94,17 @@ export function QuizFormDialog({
       setValue("name", quiz.name);
       setValue("description", quiz.description || "");
       setValue("template_id", quiz.template_id);
-      setValue("class_id", typeof quiz.class_id === "string" ? quiz.class_id : quiz.class_id._id);
+      // Safely set class_id if available (could be string or populated object)
+      if (quiz.class_id) {
+        const cid = typeof quiz.class_id === "string"
+          ? quiz.class_id
+          : (typeof quiz.class_id === "object" && "_id" in quiz.class_id)
+            ? (quiz.class_id as { _id: string })._id
+            : "";
+        setValue("class_id", cid);
+      } else {
+        setValue("class_id", "");
+      }
       setValue("status", quiz.status);
       
       if (quiz.scheduled_date) {
@@ -154,7 +164,7 @@ export function QuizFormDialog({
     setValue("answers", newAnswers);
   };
 
-  const onSubmitForm = async (data: QuizFormData) => {
+  const onSubmitForm: SubmitHandler<QuizFormData> = async (data) => {
     const success = await onSubmit(data);
     if (success) {
       reset();
@@ -165,7 +175,7 @@ export function QuizFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[700px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-175">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Create Quiz" : "Edit Quiz"}</DialogTitle>
           <DialogDescription>
@@ -297,7 +307,7 @@ export function QuizFormDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => generateAnswerKey(templateId)}
+                  onClick={() => generateAnswerKey(templateId || "form_A")}
                 >
                   Generate Template
                 </Button>
