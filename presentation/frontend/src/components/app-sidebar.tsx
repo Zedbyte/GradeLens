@@ -44,8 +44,8 @@ const navMain = [
     icon: IconCamera,
   },
   {
-    title: "Quizzes", //Page where we can create quizzes and assign them to classes, and answer keys
-    url: ROUTES.QUIZZES,
+    title: "Exams", //Page where we can create exams and assign them to classes, and answer keys
+    url: ROUTES.EXAMS,
     icon: IconWallpaper,
   },
   {

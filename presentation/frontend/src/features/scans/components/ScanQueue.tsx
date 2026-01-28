@@ -1,14 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconCheck, IconClock, IconAlertCircle } from "@tabler/icons-react";
 import type { Scan } from "@packages/types/scans/scans.types";
-import type { Quiz } from "@/features/quizzes/types/quizzes.types";
+import type { Exam } from "@/features/exams/types/exams.types";
 import type { Student } from "@/features/students/types/students.types";
 
 interface ScanQueueProps {
   scans: Scan[];
   selectedScanId?: string;
   onSelect: (id: string) => void;
-  quizzes: Quiz[];
+  exams: Exam[];
   students: Student[];
 }
 
@@ -16,7 +16,7 @@ export function ScanQueue({
   scans,
   selectedScanId,
   onSelect,
-  quizzes,
+  exams,
   students,
 }: ScanQueueProps) {
   return (
@@ -35,7 +35,7 @@ export function ScanQueue({
         )}
         
         {scans.map((scan) => {
-          const quiz = quizzes.find((q) => q._id === scan.exam_id);
+          const exam = exams.find((q) => q._id === scan.exam_id);
           const student = students.find((s) => s._id === scan.student_id);
           
           return (
@@ -54,7 +54,7 @@ export function ScanQueue({
                     {student ? `${student.first_name} ${student.last_name}` : 'Unknown Student'}
                   </p>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {quiz?.name || 'Unknown Quiz'}
+                    {exam?.name || 'Unknown Exam'}
                   </p>
                 </div>
                 <div className="flex-shrink-0">

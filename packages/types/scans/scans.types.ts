@@ -167,7 +167,7 @@ export interface Scan {
 
 export interface UploadScanRequest {
   image: string; // base64
-  exam_id: string;      // Quiz/Exam ID
+  exam_id: string;      // Exam/Exam ID
   student_id: string;   // Student ID
 }
 

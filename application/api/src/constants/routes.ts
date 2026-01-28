@@ -26,12 +26,12 @@ export const API_ROUTES = {
         STUDENTS: (classId: string) => `/classes/${classId}/students`,
         REMOVE_STUDENT: (classId: string, studentId: string) => `/classes/${classId}/students/${studentId}`,
     },
-    QUIZZES: {
-        BASE: "/quizzes",
-        BY_ID: (quizId: string) => `/quizzes/${quizId}`,
-        STATUS: (quizId: string) => `/quizzes/${quizId}/status`,
-        STATISTICS: (quizId: string) => `/quizzes/${quizId}/statistics`,
-        SCANS: (quizId: string) => `/quizzes/${quizId}/scans`,
+    EXAMS: {
+        BASE: "/exams",
+        BY_ID: (examId: string) => `/exams/${examId}`,
+        STATUS: (examId: string) => `/exams/${examId}/status`,
+        STATISTICS: (examId: string) => `/exams/${examId}/statistics`,
+        SCANS: (examId: string) => `/exams/${examId}/scans`,
     },
     GRADES: {
         BASE: "/grades",

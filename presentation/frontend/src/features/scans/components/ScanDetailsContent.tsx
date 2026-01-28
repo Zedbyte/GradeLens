@@ -3,12 +3,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { IconCheck, IconClock, IconArrowRight, IconPhotoOff, IconFilePencil, IconUser, IconClipboardCheck } from "@tabler/icons-react";
 import type { Scan, QuestionDetection, DetectionError } from "@packages/types/scans/scans.types";
-import type { Quiz } from "@/features/quizzes/types/quizzes.types";
+import type { Exam } from "@/features/exams/types/exams.types";
 import type { Student } from "@/features/students/types/students.types";
 
 interface ScanDetailsContentProps {
   scan: Scan;
-  quiz?: Quiz;
+  exam?: Exam;
   student?: Student;
   detections: QuestionDetection[];
   errors: DetectionError[];
@@ -27,7 +27,7 @@ interface ScanDetailsContentProps {
 
 export function ScanDetailsContent({
   scan,
-  quiz,
+  exam,
   student,
   detections,
   errors,
@@ -39,8 +39,8 @@ export function ScanDetailsContent({
 }: ScanDetailsContentProps) {
   return (
     <div className={`space-y-${isDialog ? '6' : '4'}`}>
-      {/* Student & Quiz Info */}
-      {(student || quiz || (scan.grading_result && scan.grading_result.score)) && (
+      {/* Student & Exam Info */}
+      {(student || exam || (scan.grading_result && scan.grading_result.score)) && (
         <div className="rounded-xl bg-background/60 p-4 border-x border-border shadow-sm">
           <div className="text-sm flex justify-evenly gap-3 flex-wrap">
             {student && (
@@ -57,14 +57,14 @@ export function ScanDetailsContent({
               </div>
             )}
 
-            {quiz && (
+            {exam && (
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
                   <IconClipboardCheck size={18} />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Quiz</p>
-                  <p className="font-medium leading-tight">{quiz.name}</p>
+                  <p className="text-xs text-muted-foreground">Exam</p>
+                  <p className="font-medium leading-tight">{exam.name}</p>
                 </div>
               </div>
             )}
@@ -210,7 +210,7 @@ export function ScanDetailsContent({
       )}
 
       {/* Edit Answers Button */}
-      {detections.length > 0 && quiz?.answers && quiz.answers.length > 0 && !isDialog && onOpenEditDialog && (
+      {detections.length > 0 && exam?.answers && exam.answers.length > 0 && !isDialog && onOpenEditDialog && (
         <div className="space-y-2">
           <Button 
             variant="outline" 

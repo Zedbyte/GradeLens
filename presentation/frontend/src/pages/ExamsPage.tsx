@@ -1,48 +1,48 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
+import { useExams } from "@/features/exams/hooks/useExams";
 import { useClasses } from "@/features/classes/hooks/useClasses";
-import { QuizFormDialog } from "@/features/quizzes/components/QuizFormDialog";
-import type { CreateQuizRequest, Quiz, UpdateQuizRequest } from "@/features/quizzes/types/quizzes.types";
+import { ExamFormDialog } from "@/features/exams/components/ExamFormDialog";
+import type { CreateExamRequest, Exam, UpdateExamRequest } from "@/features/exams/types/exams.types";
 import DataTable from "@/components/data-table";
-import getQuizColumns from "@/features/quizzes/columns/quizzes.columns";
+import getExamColumns from "@/features/exams/columns/exams.columns";
 import CrudListLayout from "@/components/CrudListLayout";
 
-export default function QuizzesPage() {
-  const { quizzes, loading, error, loadQuizzes, createQuiz, updateQuiz, deleteQuiz } = useQuizzes();
+export default function ExamsPage() {
+  const { exams, loading, error, loadExams, createExam, updateExam, deleteExam } = useExams();
   const { classes, loadClasses } = useClasses();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingQuiz, setEditingQuiz] = useState<Quiz | undefined>();
+  const [editingExam, setEditingExam] = useState<Exam | undefined>();
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
 
   useEffect(() => {
-    loadQuizzes();
-    loadClasses(); // Load classes for the quiz form dropdown
-  }, [loadQuizzes, loadClasses]);
+    loadExams();
+    loadClasses(); // Load classes for the exam form dropdown
+  }, [loadExams, loadClasses]);
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to archive ${name}?`)) {
-      await deleteQuiz(id);
+      await deleteExam(id);
     }
   };
 
   const handleAdd = () => {
-    setEditingQuiz(undefined);
+    setEditingExam(undefined);
     setDialogMode("create");
     setDialogOpen(true);
   };
 
-  const handleEdit = (quiz: Quiz) => {
-    setEditingQuiz(quiz);
+  const handleEdit = (exam: Exam) => {
+    setEditingExam(exam);
     setDialogMode("edit");
     setDialogOpen(true);
   };
 
   const handleSubmit = async (data: unknown) => {
     if (dialogMode === "create") {
-      return await createQuiz(data as CreateQuizRequest);
-    } else if (editingQuiz) {
-      return await updateQuiz(editingQuiz._id, data as UpdateQuizRequest);
+      return await createExam(data as CreateExamRequest);
+    } else if (editingExam) {
+      return await updateExam(editingExam._id, data as UpdateExamRequest);
     }
     return false;
   };
@@ -65,25 +65,25 @@ export default function QuizzesPage() {
   return (
     <>
       <CrudListLayout
-        title="Quizzes"
-        subtitle="Create and manage quizzes with answer keys"
+        title="Exams"
+        subtitle="Create and manage exams with answer keys"
         onAdd={handleAdd}
-        addLabel="Create Quiz"
+        addLabel="Create Exam"
         isLoading={loading}
         error={error}
-        itemsLength={quizzes.length}
-        emptyTitle="No quizzes yet"
-        emptyDescription="Create your first quiz to start grading"
-        emptyActionLabel="Create your first quiz"
+        itemsLength={exams.length}
+        emptyTitle="No exams yet"
+        emptyDescription="Create your first exam to start grading"
+        emptyActionLabel="Create your first exam"
       >
-        <DataTable columns={getQuizColumns({ onEdit: handleEdit, onDelete: handleDelete })} data={quizzes} searchColumn="name" />
+        <DataTable columns={getExamColumns({ onEdit: handleEdit, onDelete: handleDelete })} data={exams} searchColumn="name" />
       </CrudListLayout>
 
-      <QuizFormDialog
+      <ExamFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
-        quiz={editingQuiz}
+        exam={editingExam}
         mode={dialogMode}
         classes={classes}
       />

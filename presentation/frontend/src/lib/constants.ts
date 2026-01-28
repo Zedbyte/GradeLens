@@ -4,7 +4,7 @@ export const ROUTES = {
   SCAN: "/scans",
   STUDENTS: "/students",
   CLASSES: "/classes",
-  QUIZZES: "/quizzes",
+  EXAMS: "/exams",
   GRADES: "/grades",
   SECTIONS: "/sections",
   REPORTS: "/reports",

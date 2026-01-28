@@ -48,11 +48,11 @@ export default function DashboardPage() {
       stats: "Track students",
     },
     {
-      title: "Quizzes",
+      title: "Exams",
       description: "Create and configure assessments",
       icon: IconWallpaper,
-      href: ROUTES.QUIZZES,
-      stats: "Build quizzes",
+      href: ROUTES.EXAMS,
+      stats: "Build exams",
     },
     {
       title: "OMR Scanning",
@@ -127,13 +127,13 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <IconNotebook className="h-5 w-5 text-primary" style={{ width: '20px', height: '20px' }} />
-              New Quiz
+              New Exam
             </CardTitle>
             <CardDescription>Create a new assessment</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full bg-primary hover:bg-primary/90">
-              <Link to={ROUTES.QUIZZES}>Create Quiz</Link>
+              <Link to={ROUTES.EXAMS}>Create Exam</Link>
             </Button>
           </CardContent>
         </Card>

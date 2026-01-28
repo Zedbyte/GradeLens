@@ -2,9 +2,9 @@ import { Schema, model, Types } from "mongoose";
 import type { AnswerKey } from "../types/answer_key.types.ts";
 
 /**
- * Exam/Quiz Model
+ * Exam/Exam Model
  * 
- * Stores exam/quiz definitions including answer keys, grading policies,
+ * Stores exam/exam definitions including answer keys, grading policies,
  * and class assignments. Used by Node.js grading logic to compare detection results.
  */
 
@@ -55,7 +55,7 @@ const ExamSchema = new Schema(
       index: true
     },
     
-    // Quiz/Exam scheduling
+    // Exam/Exam scheduling
     scheduled_date: {
       type: Date
       // index defined at schema level below

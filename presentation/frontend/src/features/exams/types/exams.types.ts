@@ -1,8 +1,8 @@
 /**
- * Quiz TypeScript Types - Frontend
+ * Exam TypeScript Types - Frontend
  */
 
-export interface Quiz {
+export interface Exam {
   _id: string;
   exam_id: string;
   template_id: string;
@@ -35,7 +35,7 @@ export interface Quiz {
   updated_at: string;
 }
 
-export interface CreateQuizRequest {
+export interface CreateExamRequest {
   exam_id?: string;
   template_id: string;
   name: string;
@@ -55,7 +55,7 @@ export interface CreateQuizRequest {
   };
 }
 
-export interface UpdateQuizRequest {
+export interface UpdateExamRequest {
   name?: string;
   description?: string;
   class_id?: string;
@@ -75,16 +75,16 @@ export interface UpdateQuizRequest {
   is_active?: boolean;
 }
 
-export interface QuizListResponse {
-  quizzes: Quiz[];
+export interface ExamListResponse {
+  exams: Exam[];
   total: number;
   page?: number;
   limit?: number;
   pages?: number;
 }
 
-export interface QuizStatistics {
-  quiz_id: string;
+export interface ExamStatistics {
+  exam_id: string;
   total_scans: number;
   graded_scans: number;
   needs_review: number;

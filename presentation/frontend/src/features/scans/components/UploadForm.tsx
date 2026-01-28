@@ -7,16 +7,16 @@ import { IconAlertCircle, IconUpload, IconPhoto } from "@tabler/icons-react"
 
 interface UploadFormProps {
   onUploaded: (scanId: string) => void;
-  selectedQuiz?: string;
+  selectedExam?: string;
   selectedStudent?: string;
 }
 
-export function UploadForm({ onUploaded, selectedQuiz, selectedStudent }: UploadFormProps) {
+export function UploadForm({ onUploaded, selectedExam, selectedStudent }: UploadFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit() {
-    if (!file || !selectedQuiz || !selectedStudent) return
+    if (!file || !selectedExam || !selectedStudent) return
 
     setLoading(true)
 
@@ -26,7 +26,7 @@ export function UploadForm({ onUploaded, selectedQuiz, selectedStudent }: Upload
         const base64 = (reader.result as string).split(",")[1]
         const response = await uploadScanApi({
           image: base64,
-          exam_id: selectedQuiz,
+          exam_id: selectedExam,
           student_id: selectedStudent
         })
         setFile(null)
@@ -40,17 +40,17 @@ export function UploadForm({ onUploaded, selectedQuiz, selectedStudent }: Upload
     }
   }
 
-  const canUpload = file && selectedQuiz && selectedStudent && !loading
+  const canUpload = file && selectedExam && selectedStudent && !loading
 
   return (
     <div className="space-y-4">
-      {(!selectedQuiz || !selectedStudent) && (
+      {(!selectedExam || !selectedStudent) && (
         <Alert>
           <IconAlertCircle className="h-4 w-4" />
           <div className="ml-2">
             <p className="text-sm font-medium">Selection Required</p>
             <p className="text-sm text-muted-foreground">
-              Please select a quiz and student before uploading
+              Please select a exam and student before uploading
             </p>
           </div>
         </Alert>

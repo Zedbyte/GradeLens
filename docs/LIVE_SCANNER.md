@@ -35,7 +35,7 @@ The Live Scanner provides real-time webcam-based OMR scanning with visual feedba
 **Key Props**:
 ```typescript
 interface LiveScannerProps {
-  selectedQuiz?: string;      // Quiz ID (used to load template)
+  selectedExam?: string;      // Exam ID (used to load template)
   selectedStudent?: string;   // Student ID
   template?: Template;        // Template definition with marks and dimensions
   onCapture: (imageData: string) => void;  // Callback when user captures
@@ -133,11 +133,11 @@ CONTRAST_MIN = 30           # Low contrast
 
 ## Integration Flow
 
-### 1. User Selects Quiz
+### 1. User Selects Exam
 ```typescript
 // ScanPage.tsx
-const selectedQuizDetails = quizzes.find(q => q._id === selectedQuiz);
-const { template } = useTemplate(selectedQuizDetails?.template_id);
+const selectedExamDetails = exams.find(q => q._id === selectedExam);
+const { template } = useTemplate(selectedExamDetails?.template_id);
 ```
 
 ### 2. Template Loads
@@ -321,7 +321,7 @@ except Exception as e:
 ### Manual Testing Checklist
 
 - [ ] Camera initializes correctly
-- [ ] Template loads when quiz selected
+- [ ] Template loads when exam selected
 - [ ] Guide overlay renders at correct positions
 - [ ] Quality feedback updates in real-time
 - [ ] Registration marks detected and highlighted
@@ -391,7 +391,7 @@ except Exception as e:
 - Paper outside frame
 
 **Solutions**:
-1. Verify quiz has correct `template_id`
+1. Verify exam has correct `template_id`
 2. Improve lighting
 3. Center paper in frame
 4. Reduce camera shake
@@ -600,7 +600,7 @@ npm run dev
 **Test Flow**:
 1. Navigate to http://localhost:5173/scan
 2. Select Grade → Section → Class
-3. Select Quiz (should have template_id set)
+3. Select Exam (should have template_id set)
 4. Select Student
 5. Click "Scanning" tab
 6. Allow camera access
@@ -675,7 +675,7 @@ docker logs -f cv-service
   - → Frontend shows error, doesn't crash
 
 - [ ] **Invalid Template**:
-  - Select quiz with missing template
+  - Select exam with missing template
   - → Shows appropriate message
 
 - [ ] **Camera Denied**:
@@ -764,7 +764,7 @@ Verify documentation is complete:
 
 ### Issue: No Template Guide
 ```bash
-# Check quiz has template_id
+# Check exam has template_id
 # Verify CV service running
 curl http://localhost:8001/templates/form_60q
 
@@ -854,7 +854,7 @@ docker stats cv-service
    - Types: `presentation/frontend/src/types/template.types.ts`
    - API client: `presentation/frontend/src/api/templates.api.ts`
    - Hook: `presentation/frontend/src/hooks/useTemplate.ts`
-   - Auto-loads template based on selected quiz
+   - Auto-loads template based on selected exam
 
 3. **Preview Types & API**
    - Extended scan types with preview response structures
@@ -862,7 +862,7 @@ docker stats cv-service
    - Direct fetch to CV service (bypasses main API)
 
 4. **ScanPage Integration**
-   - Loads template from quiz selection
+   - Loads template from exam selection
    - Passes template to LiveScanner
    - Handles capture → upload → queue workflow
 
@@ -892,7 +892,7 @@ docker stats cv-service
 
 ### Template-Based Guides
 - No assumptions about paper size
-- Loads template from quiz selection
+- Loads template from exam selection
 - Renders registration marks at exact positions
 - Scales coordinates from canonical space to video space
 
@@ -974,7 +974,7 @@ docs/
 
 ```
 User Actions:
-1. Select Quiz → Loads template_id
+1. Select Exam → Loads template_id
 2. Template Hook → Fetches template from CV service
 3. Camera Activates → Webcam stream starts
 4. Preview Loop (500ms):
@@ -990,7 +990,7 @@ User Actions:
 
 ### Manual Tests (To Run)
 - [ ] Camera permission prompt appears
-- [ ] Template loads when quiz selected
+- [ ] Template loads when exam selected
 - [ ] Guide overlay renders correctly
 - [ ] Registration marks align with paper
 - [ ] Quality warnings trigger appropriately
@@ -1254,7 +1254,7 @@ npm run dev
 
 1. Navigate to: http://localhost:5173/scan
 2. Select: Grade → Section → Class
-3. Select: Quiz (with template_id)
+3. Select: Exam (with template_id)
 4. Select: Student
 5. Click: "Scanning" tab
 6. Allow: Camera access
@@ -1401,7 +1401,7 @@ gradelens-cv-api   5-10%    150MB / 8GB         1.8%
 ## Troubleshooting
 
 ### Issue: Detection zones not showing
-**Check**: Quiz has template_id set in database  
+**Check**: Exam has template_id set in database  
 **Check**: Template exists in cv service  
 **Verify**: `curl http://localhost:8001/templates/{template_id}`
 
@@ -1487,8 +1487,8 @@ gradelens-cv-api   5-10%    150MB / 8GB         1.8%
    - Choose Section
    - Choose Class
 
-3. **Select Quiz & Student**:
-   - Pick the quiz (this loads the template)
+3. **Select Exam & Student**:
+   - Pick the exam (this loads the template)
    - Pick the student
 
 4. **Switch to "Scanning" Tab**
@@ -1517,8 +1517,8 @@ gradelens-cv-api   5-10%    150MB / 8GB         1.8%
 - **Permissions**: Ensure browser has camera access
 
 ### No Template Guide
-- **Check**: Quiz selected?
-- **Check**: Quiz has `template_id` set?
+- **Check**: Exam selected?
+- **Check**: Exam has `template_id` set?
 - **Check**: CV service running?
 - **Check**: Browser console for errors
 
@@ -1788,7 +1788,7 @@ Marks: 4/4    Quality: 85%
 
 ## Usage Flow
 
-1. **Select Quiz** → Template loads automatically
+1. **Select Exam** → Template loads automatically
 2. **Point Camera** → Detection zones appear
 3. **Position Paper** → Align within guide frame
 4. **Watch Feedback** → Zones turn green as marks detected

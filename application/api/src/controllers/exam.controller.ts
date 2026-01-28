@@ -2,36 +2,36 @@ import { Request, Response, NextFunction } from "express";
 import { ExamModel } from "../models/Exam.ts";
 import { ClassModel } from "../models/Class.ts";
 import { ScanModel } from "../models/Scan.ts";
-import type { CreateQuizRequest, UpdateQuizRequest } from "../types/quiz.types.ts";
+import type { CreateExamRequest, UpdateExamRequest } from "../types/exam.types.ts";
 import { Types } from "mongoose";
 
 /**
- * Quiz Controller
- * Handles CRUD operations for quizzes/exams
+ * Exam Controller
+ * Handles CRUD operations for exams/exams
  */
 
-export class QuizController {
+export class ExamController {
   /**
-   * Create a new quiz
-   * POST /api/quizzes
+   * Create a new exam
+   * POST /api/exams
    */
-  static async createQuiz(req: Request, res: Response, next: NextFunction) {
+  static async createExam(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const data: CreateQuizRequest = req.body;
+      const data: CreateExamRequest = req.body;
 
       // Auto-generate exam_id if not provided
       if (!data.exam_id) {
         const base = data.name.split(" ")[0].toUpperCase().replace(/[^A-Z0-9]/g, "");
-        let candidate = base || `QUIZ${Date.now().toString().slice(-5)}`;
+        let candidate = base || `EXAM${Date.now().toString().slice(-5)}`;
         let exists = await ExamModel.findOne({ exam_id: candidate });
         let idx = 1;
         while (exists) {
-          candidate = `${base || 'QUIZ'}${Date.now().toString().slice(-5)}${idx}`;
+          candidate = `${base || 'EXAM'}${Date.now().toString().slice(-5)}${idx}`;
           exists = await ExamModel.findOne({ exam_id: candidate });
           idx += 1;
         }
@@ -40,7 +40,7 @@ export class QuizController {
         // Check if exam_id already exists when provided
         const existing = await ExamModel.findOne({ exam_id: data.exam_id });
         if (existing) {
-          return res.status(409).json({ error: "Quiz ID already exists" });
+          return res.status(409).json({ error: "Exam ID already exists" });
         }
       }
 
@@ -52,7 +52,7 @@ export class QuizController {
         }
       }
 
-      const quiz = new ExamModel({
+      const exam = new ExamModel({
         ...data,
         created_by: userId,
         status: "draft",
@@ -64,11 +64,11 @@ export class QuizController {
         }
       });
 
-      await quiz.save();
+      await exam.save();
 
       res.status(201).json({
-        message: "Quiz created successfully",
-        quiz
+        message: "Exam created successfully",
+        exam
       });
     } catch (error) {
       next(error);
@@ -76,10 +76,10 @@ export class QuizController {
   }
 
   /**
-   * Get all quizzes
-   * GET /api/quizzes
+   * Get all exams
+   * GET /api/exams
    */
-  static async listQuizzes(req: Request, res: Response, next: NextFunction) {
+  static async listExams(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
       const { status, class_id, template_id, page = 1, limit = 50 } = req.query;
@@ -100,7 +100,7 @@ export class QuizController {
 
       const skip = (Number(page) - 1) * Number(limit);
 
-      const [quizzes, total] = await Promise.all([
+      const [exams, total] = await Promise.all([
         ExamModel.find(query)
           .populate("class_id", "class_id name student_count")
           .sort({ scheduled_date: -1, createdAt: -1 })
@@ -111,7 +111,7 @@ export class QuizController {
       ]);
 
       res.json({
-        quizzes,
+        exams,
         total,
         page: Number(page),
         limit: Number(limit),
@@ -123,48 +123,48 @@ export class QuizController {
   }
 
   /**
-   * Get quiz by ID
-   * GET /api/quizzes/:id
+   * Get exam by ID
+   * GET /api/exams/:id
    */
-  static async getQuiz(req: Request, res: Response, next: NextFunction) {
+  static async getExam(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
 
-      const quiz = await ExamModel.findOne({
+      const exam = await ExamModel.findOne({
         _id: id,
         created_by: userId,
         is_active: true
       }).populate("class_id", "class_id name academic_year student_count");
 
-      if (!quiz) {
-        return res.status(404).json({ error: "Quiz not found" });
+      if (!exam) {
+        return res.status(404).json({ error: "Exam not found" });
       }
 
-      res.json({ quiz });
+      res.json({ exam });
     } catch (error) {
       next(error);
     }
   }
 
   /**
-   * Update quiz
-   * PUT /api/quizzes/:id
+   * Update exam
+   * PUT /api/exams/:id
    */
-  static async updateQuiz(req: Request, res: Response, next: NextFunction) {
+  static async updateExam(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
-      const updates: UpdateQuizRequest = req.body;
+      const updates: UpdateExamRequest = req.body;
 
-      const quiz = await ExamModel.findOne({
+      const exam = await ExamModel.findOne({
         _id: id,
         created_by: userId,
         is_active: true
       });
 
-      if (!quiz) {
-        return res.status(404).json({ error: "Quiz not found" });
+      if (!exam) {
+        return res.status(404).json({ error: "Exam not found" });
       }
 
       // Verify class exists if being updated
@@ -176,12 +176,12 @@ export class QuizController {
       }
 
       // Update fields
-      Object.assign(quiz, updates);
-      await quiz.save();
+      Object.assign(exam, updates);
+      await exam.save();
 
       res.json({
-        message: "Quiz updated successfully",
-        quiz
+        message: "Exam updated successfully",
+        exam
       });
     } catch (error) {
       next(error);
@@ -189,31 +189,31 @@ export class QuizController {
   }
 
   /**
-   * Delete (deactivate) quiz
-   * DELETE /api/quizzes/:id
+   * Delete (deactivate) exam
+   * DELETE /api/exams/:id
    */
-  static async deleteQuiz(req: Request, res: Response, next: NextFunction) {
+  static async deleteExam(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
 
-      const quiz = await ExamModel.findOne({
+      const exam = await ExamModel.findOne({
         _id: id,
         created_by: userId,
         is_active: true
       });
 
-      if (!quiz) {
-        return res.status(404).json({ error: "Quiz not found" });
+      if (!exam) {
+        return res.status(404).json({ error: "Exam not found" });
       }
 
       // Soft delete - set is_active to false and status to archived
-      quiz.is_active = false;
-      quiz.status = "archived";
-      await quiz.save();
+      exam.is_active = false;
+      exam.status = "archived";
+      await exam.save();
 
       res.json({
-        message: "Quiz archived successfully"
+        message: "Exam archived successfully"
       });
     } catch (error) {
       next(error);
@@ -221,10 +221,10 @@ export class QuizController {
   }
 
   /**
-   * Update quiz status
-   * PATCH /api/quizzes/:id/status
+   * Update exam status
+   * PATCH /api/exams/:id/status
    */
-  static async updateQuizStatus(req: Request, res: Response, next: NextFunction) {
+  static async updateExamStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -234,25 +234,25 @@ export class QuizController {
         return res.status(400).json({ error: "Invalid status" });
       }
 
-      const quiz = await ExamModel.findOne({
+      const exam = await ExamModel.findOne({
         _id: id,
         created_by: userId,
         is_active: true
       });
 
-      if (!quiz) {
-        return res.status(404).json({ error: "Quiz not found" });
+      if (!exam) {
+        return res.status(404).json({ error: "Exam not found" });
       }
 
-      quiz.status = status;
+      exam.status = status;
       if (status === "archived") {
-        quiz.is_active = false;
+        exam.is_active = false;
       }
-      await quiz.save();
+      await exam.save();
 
       res.json({
-        message: "Quiz status updated successfully",
-        quiz
+        message: "Exam status updated successfully",
+        exam
       });
     } catch (error) {
       next(error);
@@ -260,26 +260,26 @@ export class QuizController {
   }
 
   /**
-   * Get quiz statistics
-   * GET /api/quizzes/:id/statistics
+   * Get exam statistics
+   * GET /api/exams/:id/statistics
    */
-  static async getQuizStatistics(req: Request, res: Response, next: NextFunction) {
+  static async getExamStatistics(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
 
-      const quiz = await ExamModel.findOne({
+      const exam = await ExamModel.findOne({
         _id: id,
         created_by: userId,
         is_active: true
       });
 
-      if (!quiz) {
-        return res.status(404).json({ error: "Quiz not found" });
+      if (!exam) {
+        return res.status(404).json({ error: "Exam not found" });
       }
 
-      // Get all scans for this quiz
-      const scans = await ScanModel.find({ exam_id: quiz._id });
+      // Get all scans for this exam
+      const scans = await ScanModel.find({ exam_id: exam._id });
 
       const totalScans = scans.length;
       const gradedScans = scans.filter(s => s.status === "graded").length;
@@ -294,8 +294,8 @@ export class QuizController {
         ? scores.reduce((a, b) => a + b, 0) / scores.length
         : 0;
 
-      const averagePercentage = quiz.total_points! > 0
-        ? (averageScore / quiz.total_points!) * 100
+      const averagePercentage = exam.total_points! > 0
+        ? (averageScore / exam.total_points!) * 100
         : 0;
 
       const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
@@ -303,15 +303,15 @@ export class QuizController {
 
       // Calculate completion rate
       let completionRate = 0;
-      if (quiz.class_id) {
-        const classDoc = await ClassModel.findById(quiz.class_id);
+      if (exam.class_id) {
+        const classDoc = await ClassModel.findById(exam.class_id);
         if (classDoc && classDoc.student_ids.length > 0) {
           completionRate = (totalScans / classDoc.student_ids.length) * 100;
         }
       }
 
       res.json({
-        quiz_id: quiz._id,
+        exam_id: exam._id,
         total_scans: totalScans,
         graded_scans: gradedScans,
         needs_review: needsReview,
@@ -327,26 +327,26 @@ export class QuizController {
   }
 
   /**
-   * Get scans for quiz
-   * GET /api/quizzes/:id/scans
+   * Get scans for exam
+   * GET /api/exams/:id/scans
    */
-  static async getQuizScans(req: Request, res: Response, next: NextFunction) {
+  static async getExamScans(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
       const { status, page = 1, limit = 50 } = req.query;
 
-      const quiz = await ExamModel.findOne({
+      const exam = await ExamModel.findOne({
         _id: id,
         created_by: userId,
         is_active: true
       });
 
-      if (!quiz) {
-        return res.status(404).json({ error: "Quiz not found" });
+      if (!exam) {
+        return res.status(404).json({ error: "Exam not found" });
       }
 
-      const query: any = { exam_id: quiz._id };
+      const query: any = { exam_id: exam._id };
       if (status) {
         query.status = status;
       }

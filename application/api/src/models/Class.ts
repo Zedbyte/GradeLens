@@ -4,7 +4,7 @@ import { Schema, model, Types, Model } from "mongoose";
  * Class Model
  * 
  * Represents a class/section containing students.
- * Can have multiple quizzes/exams assigned to it.
+ * Can have multiple exams/exams assigned to it.
  */
 
 export interface IClass {

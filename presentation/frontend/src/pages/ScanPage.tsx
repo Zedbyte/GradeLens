@@ -6,7 +6,7 @@ import { IconCamera, IconUpload, IconEdit } from "@tabler/icons-react";
 import { useGrades } from "@/features/grades/hooks/useGrades";
 import { useSections } from "@/features/sections/hooks/useSections";
 import { useClasses } from "@/features/classes/hooks/useClasses";
-import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
+import { useExams } from "@/features/exams/hooks/useExams";
 import { useStudents } from "@/features/students/hooks/useStudents";
 import { useTemplate } from "@/hooks/useTemplate";
 import { useScans } from "../features/scans/hooks/useScans";
@@ -25,7 +25,7 @@ export function ScanPage() {
   const [selectedClass, setSelectedClass] = useState<string>("");
   
   // State for scan workflow
-  const [selectedQuiz, setSelectedQuiz] = useState<string>("");
+  const [selectedExam, setSelectedExam] = useState<string>("");
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("upload");
 
@@ -43,12 +43,12 @@ export function ScanPage() {
   const { grades, loadGrades } = useGrades();
   const { sections, loadSections } = useSections();
   const { classes, loadClasses } = useClasses();
-  const { quizzes, loadQuizzes } = useQuizzes();
+  const { exams, loadExams } = useExams();
   const { students, loadStudents } = useStudents();
 
-  // Load template based on selected quiz
-  const selectedQuizDetails = quizzes.find(q => q._id === selectedQuiz);
-  const { template } = useTemplate(selectedQuizDetails?.template_id);
+  // Load template based on selected exam
+  const selectedExamDetails = exams.find(q => q._id === selectedExam);
+  const { template } = useTemplate(selectedExamDetails?.template_id);
 
   // Load initial data once on mount
   // Using useRef to ensure functions are called only once and avoid dependency issues
@@ -65,7 +65,7 @@ export function ScanPage() {
         loadGrades(),
         loadSections(),
         loadClasses(),
-        loadQuizzes(),
+        loadExams(),
         loadStudents(),
         loadScans(),
       ]);
@@ -114,8 +114,8 @@ export function ScanPage() {
     return true;
   });
 
-  // Find selected quiz details
-  const quizDetails = quizzes.find(q => q._id === selectedQuiz);
+  // Find selected exam details
+  const examDetails = exams.find(q => q._id === selectedExam);
 
   const handleSaveScan = async () => {
     // Refresh scans - the store will handle refreshing selected scan automatically
@@ -125,12 +125,12 @@ export function ScanPage() {
   const handleRedoScan = () => {
     if (!selectedScan) return;
     
-    // Pre-fill the quiz and student from the current scan
-    const quiz = quizzes.find(q => q._id === selectedScan.exam_id);
+    // Pre-fill the exam and student from the current scan
+    const exam = exams.find(q => q._id === selectedScan.exam_id);
     const student = students.find(s => s._id === selectedScan.student_id);
     
-    if (quiz && student) {
-      setSelectedQuiz(quiz._id!);
+    if (exam && student) {
+      setSelectedExam(exam._id!);
       setSelectedStudent(student._id!);
       // Switch to upload tab for re-scanning
       setActiveTab("upload");
@@ -138,12 +138,12 @@ export function ScanPage() {
   };
 
   const handleLiveCapture = async (imageData: string) => {
-    if (!selectedQuiz || !selectedStudent) return;
+    if (!selectedExam || !selectedStudent) return;
 
     try {
       const scanId = await uploadScan({
         image: imageData,
-        exam_id: selectedQuiz,
+        exam_id: selectedExam,
         student_id: selectedStudent,
       });
 
@@ -189,13 +189,13 @@ export function ScanPage() {
 
       {/* Assessment Selection Row */}
       <AssessmentSelection
-        quizzes={quizzes}
+        exams={exams}
         students={filteredStudents}
-        selectedQuiz={selectedQuiz}
+        selectedExam={selectedExam}
         selectedStudent={selectedStudent}
-        onQuizChange={setSelectedQuiz}
+        onExamChange={setSelectedExam}
         onStudentChange={setSelectedStudent}
-        quizDetails={quizDetails}
+        examDetails={examDetails}
       />
 
       {/* Scan Input Row */}
@@ -223,7 +223,7 @@ export function ScanPage() {
 
             <TabsContent value="scanning" className="space-y-4 py-4">
               <LiveScanner
-                selectedQuiz={selectedQuiz}
+                selectedExam={selectedExam}
                 selectedStudent={selectedStudent}
                 template={template || undefined}
                 onCapture={handleLiveCapture}
@@ -236,7 +236,7 @@ export function ScanPage() {
                   loadScans();
                   selectScan(scanId);
                 }}
-                selectedQuiz={selectedQuiz}
+                selectedExam={selectedExam}
                 selectedStudent={selectedStudent}
               />
             </TabsContent>
@@ -250,7 +250,7 @@ export function ScanPage() {
                     Manually enter student answers
                   </p>
                 </div>
-                <Button disabled={!selectedQuiz || !selectedStudent}>
+                <Button disabled={!selectedExam || !selectedStudent}>
                   <IconEdit className="mr-2 h-4 w-4" />
                   Start Manual Entry
                 </Button>
@@ -268,7 +268,7 @@ export function ScanPage() {
             scans={scans}
             selectedScanId={selectedScanId || undefined}
             onSelect={selectScan}
-            quizzes={quizzes}
+            exams={exams}
             students={students}
           />
         </div>
@@ -278,7 +278,7 @@ export function ScanPage() {
           <ScanDetails
             onSave={handleSaveScan}
             onRedoScan={handleRedoScan}
-            quizzes={quizzes}
+            exams={exams}
             students={students}
           />
         </div>

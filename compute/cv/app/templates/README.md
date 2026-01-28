@@ -7,7 +7,7 @@ This directory contains template definitions (JSON files) that define the physic
 Each template is a JSON file named `{template_id}.json`, for example:
 - `form_A.json`
 - `midterm_v2.json`
-- `quiz_short.json`
+- `exam_short.json`
 
 ## Usage
 

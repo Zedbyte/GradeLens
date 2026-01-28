@@ -10,18 +10,18 @@ import { useScans } from "../hooks/useScans";
 import { EditAnswersDialog } from "./EditAnswersDialog";
 import { ViewAdvancedDialog } from "./ViewAdvancedDialog";
 import { ScanDetailsContent } from "./ScanDetailsContent";
-import type { Quiz } from "@/features/quizzes";
+import type { Exam } from "@/features/exams";
 import type { Student } from "@/features/students";
 
 interface ScanDetailsProps {
   onSave?: () => void;
   onRedoScan?: () => void;
   className?: string;
-  quizzes?: Quiz[];
+  exams?: Exam[];
   students?: Student[];
 }
 
-export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }: ScanDetailsProps) {
+export function ScanDetails({ onSave, onRedoScan, className, exams, students }: ScanDetailsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
@@ -42,8 +42,8 @@ export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }
     }
   }, [error]);
   
-  // quizzes and students are passed from parent to avoid duplicate hook state
-  const localQuizzes = quizzes || [];
+  // exams and students are passed from parent to avoid duplicate hook state
+  const localExams = exams || [];
   const localStudents = students || [];
 
   const handleImageError = (imagePath: string) => {
@@ -148,9 +148,9 @@ export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }
     }
   };
 
-  // Redo scan: scroll to top, notify user that quiz/student were auto-selected, then invoke parent handler
+  // Redo scan: scroll to top, notify user that exam/student were auto-selected, then invoke parent handler
   const handleRedoClick = () => {
-    if (!selectedScan || !quiz || !student) return;
+    if (!selectedScan || !exam || !student) return;
 
     // Scroll to top of page to emphasize selection
     try {
@@ -160,12 +160,12 @@ export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }
       window.scrollTo(0, 0);
     }
 
-    // Notify via sonner that we auto-selected quiz/student
-    const quizLabel = quiz ? `${quiz.name}` : "(quiz)";
+    // Notify via sonner that we auto-selected exam/student
+    const examLabel = exam ? `${exam.name}` : "(exam)";
     const studentLabel = student ? `${student.first_name} ${student.last_name}` : "(student)";
 
-    toast.info("Auto-selected quiz & student", {
-      description: `Pre-filled ${quizLabel} for ${studentLabel} — ready to re-upload.`,
+    toast.info("Auto-selected exam & student", {
+      description: `Pre-filled ${examLabel} for ${studentLabel} — ready to re-upload.`,
     });
 
     // Call parent handler to switch to upload view / pre-fill selections
@@ -194,8 +194,8 @@ export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }
   const warnings = selectedScan?.detection_result?.warnings || [];
   const errors = selectedScan?.detection_result?.errors || [];
 
-  // Find quiz and student for display
-  const quiz = localQuizzes.find(q => q._id === selectedScan.exam_id);
+  // Find exam and student for display
+  const exam = localExams.find(q => q._id === selectedScan.exam_id);
   const student = localStudents.find(s => s._id === selectedScan.student_id);
 
   // Calculate statistics
@@ -226,8 +226,8 @@ export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }
   };
   const StatusIcon = statusInfo.icon;
 
-  // Get answer key from quiz for comparison
-  const answers = quiz?.answers || [];
+  // Get answer key from exam for comparison
+  const answers = exam?.answers || [];
 
   return (
     <Card className={cn("flex flex-col", className)}>
@@ -271,7 +271,7 @@ export function ScanDetails({ onSave, onRedoScan, className, quizzes, students }
 
           <ScanDetailsContent
             scan={selectedScan}
-            quiz={quiz}
+            exam={exam}
             student={student}
             detections={detections}
             errors={errors}

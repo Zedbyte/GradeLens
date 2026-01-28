@@ -1,14 +1,14 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Quiz } from "../types/quizzes.types";
+import type { Exam } from "../types/exams.types";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconTrash, IconClipboard } from "@tabler/icons-react";
 
-export type QuizColumnActions = {
-  onEdit: (q: Quiz) => void;
+export type ExamColumnActions = {
+  onEdit: (q: Exam) => void;
   onDelete: (id: string, name: string) => void;
 };
 
-export function getQuizColumns({ onEdit, onDelete }: QuizColumnActions): ColumnDef<Quiz>[] {
+export function getExamColumns({ onEdit, onDelete }: ExamColumnActions): ColumnDef<Exam>[] {
   return [
     {
       accessorKey: "name",
@@ -45,13 +45,13 @@ export function getQuizColumns({ onEdit, onDelete }: QuizColumnActions): ColumnD
       enableHiding: false,
       header: "Actions",
       cell: ({ row }) => {
-        const quiz = row.original;
+        const exam = row.original;
         return (
           <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(quiz)}>
+            <Button variant="ghost" size="icon" onClick={() => onEdit(exam)}>
               <IconEdit className="size-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(quiz._id, quiz.name)}>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(exam._id, exam.name)}>
               <IconTrash className="size-4" />
             </Button>
           </div>
@@ -61,4 +61,4 @@ export function getQuizColumns({ onEdit, onDelete }: QuizColumnActions): ColumnD
   ];
 }
 
-export default getQuizColumns;
+export default getExamColumns;

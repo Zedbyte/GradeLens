@@ -1,11 +1,11 @@
 /**
- * Quiz/Exam TypeScript Types
- * Enhanced type definitions for Quiz/Exam entity
+ * Exam/Exam TypeScript Types
+ * Enhanced type definitions for Exam/Exam entity
  */
 
 import type { AnswerKey } from "./answer_key.types.ts";
 
-export interface Quiz {
+export interface Exam {
   _id: string;
   exam_id: string;               // Unique exam identifier
   template_id: string;           // Form template to use
@@ -53,7 +53,7 @@ export interface Quiz {
   updated_at: string;            // ISO date string
 }
 
-export interface CreateQuizRequest {
+export interface CreateExamRequest {
   exam_id?: string;
   template_id: string;
   name: string;
@@ -73,7 +73,7 @@ export interface CreateQuizRequest {
   };
 }
 
-export interface UpdateQuizRequest {
+export interface UpdateExamRequest {
   name?: string;
   description?: string;
   class_id?: string;
@@ -93,14 +93,14 @@ export interface UpdateQuizRequest {
   is_active?: boolean;
 }
 
-export interface QuizListResponse {
-  quizzes: Quiz[];
+export interface ExamListResponse {
+  exams: Exam[];
   total: number;
   page?: number;
   limit?: number;
 }
 
-export interface QuizWithClass extends Quiz {
+export interface ExamWithClass extends Exam {
   class?: {
     _id: string;
     class_id: string;
@@ -109,8 +109,8 @@ export interface QuizWithClass extends Quiz {
   };
 }
 
-export interface QuizStatistics {
-  quiz_id: string;
+export interface ExamStatistics {
+  exam_id: string;
   total_scans: number;
   graded_scans: number;
   needs_review: number;

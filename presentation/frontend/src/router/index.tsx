@@ -3,7 +3,7 @@ import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import StudentsPage from "@/pages/StudentsPage";
 import ClassesPage from "@/pages/ClassesPage";
-import QuizzesPage from "@/pages/QuizzesPage";
+import ExamsPage from "@/pages/ExamsPage";
 import { GradesPage } from "@/pages/GradesPage";
 import { SectionsPage } from "@/pages/SectionsPage";
 import ReportsPage from "@/pages/ReportsPage";
@@ -71,11 +71,11 @@ export function AppRouter() {
             />
 
             <Route
-            path={ROUTES.QUIZZES}
+            path={ROUTES.EXAMS}
             element={
                 <ProtectedRoute>
                 <AppLayout>
-                    <QuizzesPage />
+                    <ExamsPage />
                 </AppLayout>
                 </ProtectedRoute>
             }

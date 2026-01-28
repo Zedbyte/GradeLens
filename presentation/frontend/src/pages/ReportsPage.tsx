@@ -12,14 +12,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGrades } from "@/features/grades/hooks/useGrades";
 import { useClasses } from "@/features/classes/hooks/useClasses";
-import { useQuizzes } from "@/features/quizzes/hooks/useQuizzes";
+import { useExams } from "@/features/exams/hooks/useExams";
 import { useReports } from "@/features/report/hooks/useReports";
 import PLEntries from "@/features/report/components/PLEntries";
 import ItemEntries from "@/features/report/components/ItemEntries";
 import SummaryEntries from "@/features/report/components/SummaryEntries";
 import type { Class as ClassType } from "@/features/classes/types/classes.types";
 import type { Grade as GradeType } from "@/features/grades/types/grades.types";
-import type { Quiz as ExamType } from "@/features/quizzes/types/quizzes.types";
+import type { Exam as ExamType } from "@/features/exams/types/exams.types";
 import {
   IconChartBar,
   IconClipboardList,
@@ -33,13 +33,13 @@ export default function ReportPage() {
 
     const { grades, loadGrades } = useGrades();
     const { classes, loadClasses } = useClasses();
-    const { quizzes, loadQuizzes } = useQuizzes();
+    const { exams, loadExams } = useExams();
     const { plData, loading: isLoadingReport, error: reportError, loadPLEntries, reset } = useReports();
 
     useEffect(() => {
         loadGrades();
         loadClasses();
-        loadQuizzes();
+        loadExams();
         // intentionally run once on mount
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -67,7 +67,7 @@ export default function ReportPage() {
     const availableExams = useMemo(() => {
         if (!selectedClass) return [] as ExamType[];
 
-        return quizzes.filter((e: ExamType) => {
+        return exams.filter((e: ExamType) => {
         // Handle exam.class_id being ObjectId or string
         const examClassId =
             typeof e.class_id === "string"
@@ -75,7 +75,7 @@ export default function ReportPage() {
             : e.class_id?._id || e.class_id;
         return examClassId === selectedClass;
         }) as ExamType[];
-    }, [quizzes, selectedClass]);
+    }, [exams, selectedClass]);
 
     const handleGradeChange = (value: string) => {
         setSelectedGrade(value);

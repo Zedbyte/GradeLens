@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
-import type { Quiz } from "../types/quizzes.types";
+import type { Exam } from "../types/exams.types";
 
 const answerSchema = z.object({
   question_id: z.number().min(1, "Question ID must be positive"),
@@ -23,8 +23,8 @@ const answerSchema = z.object({
   points: z.number().min(0, "Points must be non-negative").default(1),
 });
 
-const quizSchema = z.object({
-  name: z.string().min(1, "Quiz name is required"),
+const examSchema = z.object({
+  name: z.string().min(1, "Exam name is required"),
   description: z.string().optional(),
   template_id: z.string(),
   class_id: z.string().min(1, "Class is required"),
@@ -34,26 +34,26 @@ const quizSchema = z.object({
   answers: z.array(answerSchema).min(1, "At least one answer is required"),
 });
 
-type QuizFormData = z.infer<typeof quizSchema>;
+type ExamFormData = z.infer<typeof examSchema>;
 type Answer = z.infer<typeof answerSchema>;
 
-interface QuizFormDialogProps {
+interface ExamFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: QuizFormData) => Promise<boolean>;
-  quiz?: Quiz;
+  onSubmit: (data: ExamFormData) => Promise<boolean>;
+  exam?: Exam;
   mode: "create" | "edit";
   classes?: Array<{ _id: string; name: string; class_id: string }>;
 }
 
-export function QuizFormDialog({
+export function ExamFormDialog({
   open,
   onOpenChange,
   onSubmit,
-  quiz,
+  exam,
   mode,
   classes = [],
-}: QuizFormDialogProps) {
+}: ExamFormDialogProps) {
   const [answers, setAnswers] = useState<Answer[]>([]);
   
   const {
@@ -63,8 +63,8 @@ export function QuizFormDialog({
     reset,
     setValue,
     watch,
-  } = useForm<QuizFormData>({
-    resolver: zodResolver(quizSchema) as unknown as Resolver<QuizFormData>,
+  } = useForm<ExamFormData>({
+    resolver: zodResolver(examSchema) as unknown as Resolver<ExamFormData>,
     defaultValues: {
       status: "draft",
       template_id: "form_60q",
@@ -90,36 +90,36 @@ export function QuizFormDialog({
   };
 
   useEffect(() => {
-    if (quiz && mode === "edit") {
-      setValue("name", quiz.name);
-      setValue("description", quiz.description || "");
-      setValue("template_id", quiz.template_id);
+    if (exam && mode === "edit") {
+      setValue("name", exam.name);
+      setValue("description", exam.description || "");
+      setValue("template_id", exam.template_id);
       // Safely set class_id if available (could be string or populated object)
-      if (quiz.class_id) {
-        const cid = typeof quiz.class_id === "string"
-          ? quiz.class_id
-          : (typeof quiz.class_id === "object" && "_id" in quiz.class_id)
-            ? (quiz.class_id as { _id: string })._id
+      if (exam.class_id) {
+        const cid = typeof exam.class_id === "string"
+          ? exam.class_id
+          : (typeof exam.class_id === "object" && "_id" in exam.class_id)
+            ? (exam.class_id as { _id: string })._id
             : "";
         setValue("class_id", cid);
       } else {
         setValue("class_id", "");
       }
-      setValue("status", quiz.status);
+      setValue("status", exam.status);
       
-      if (quiz.scheduled_date) {
-        const date = new Date(quiz.scheduled_date);
+      if (exam.scheduled_date) {
+        const date = new Date(exam.scheduled_date);
         setValue("scheduled_date", date.toISOString().split("T")[0]);
       }
-      if (quiz.due_date) {
-        const date = new Date(quiz.due_date);
+      if (exam.due_date) {
+        const date = new Date(exam.due_date);
         setValue("due_date", date.toISOString().split("T")[0]);
       }
       
       // Load existing answers
-      if (quiz.answers && quiz.answers.length > 0) {
-        setAnswers(quiz.answers);
-        setValue("answers", quiz.answers);
+      if (exam.answers && exam.answers.length > 0) {
+        setAnswers(exam.answers);
+        setValue("answers", exam.answers);
       }
     } else {
       reset({
@@ -134,7 +134,7 @@ export function QuizFormDialog({
       });
       setAnswers([]);
     }
-  }, [quiz, mode, setValue, reset]);
+  }, [exam, mode, setValue, reset]);
 
   const updateAnswer = (index: number, field: keyof Answer, value: string | number) => {
     const newAnswers = [...answers];
@@ -164,7 +164,7 @@ export function QuizFormDialog({
     setValue("answers", newAnswers);
   };
 
-  const onSubmitForm: SubmitHandler<QuizFormData> = async (data) => {
+  const onSubmitForm: SubmitHandler<ExamFormData> = async (data) => {
     const success = await onSubmit(data);
     if (success) {
       reset();
@@ -177,25 +177,25 @@ export function QuizFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-175">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Create Quiz" : "Edit Quiz"}</DialogTitle>
+          <DialogTitle>{mode === "create" ? "Create Exam" : "Edit Exam"}</DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Create a new quiz with an answer key. All fields marked with * are required."
-              : "Update quiz information. Changes will be saved immediately."}
+              ? "Create a new exam with an answer key. All fields marked with * are required."
+              : "Update exam information. Changes will be saved immediately."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
-          {/* Quiz ID is auto-generated on the backend; no input required */}
+          {/* Exam ID is auto-generated on the backend; no input required */}
 
           <div className="space-y-2">
             <Label htmlFor="name">
-              Quiz Name <span className="text-destructive">*</span>
+              Exam Name <span className="text-destructive">*</span>
             </Label>
             <Input
               id="name"
               {...register("name")}
-              placeholder="e.g., Midterm Exam, Chapter 5 Quiz"
+              placeholder="e.g., Midterm Exam, Chapter 5 Exam"
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -207,7 +207,7 @@ export function QuizFormDialog({
             <textarea
               id="description"
               {...register("description")}
-              placeholder="Brief description of the quiz content"
+              placeholder="Brief description of the exam content"
               className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
             />
           </div>
@@ -399,7 +399,7 @@ export function QuizFormDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : mode === "create" ? "Create Quiz" : "Save Changes"}
+              {isSubmitting ? "Saving..." : mode === "create" ? "Create Exam" : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>

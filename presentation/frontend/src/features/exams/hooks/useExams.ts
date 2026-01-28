@@ -1,17 +1,17 @@
 import { useState, useCallback } from "react";
-import { quizzesApi } from "../api/quizzes.api";
-import type { Quiz, CreateQuizRequest, UpdateQuizRequest, QuizStatistics } from "../types/quizzes.types";
+import { ExamsApi } from "../api/exams.api";
+import type { Exam, CreateExamRequest, UpdateExamRequest, ExamStatistics } from "../types/exams.types";
 import { getErrorMessage } from "@/lib/error";
 
-export function useQuizzes() {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
-  const [statistics, setStatistics] = useState<QuizStatistics | null>(null);
+export function useExams() {
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const [statistics, setStatistics] = useState<ExamStatistics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
 
-  const loadQuizzes = useCallback(async (params?: {
+  const loadExams = useCallback(async (params?: {
     status?: string;
     class_id?: string;
     template_id?: string;
@@ -21,78 +21,78 @@ export function useQuizzes() {
     setLoading(true);
     setError(null);
     try {
-      const data = await quizzesApi.list(params);
-      setQuizzes(data.quizzes);
+      const data = await ExamsApi.list(params);
+      setExams(data.exams);
       setTotal(data.total);
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to load quizzes");
-      console.error("Failed to load quizzes:", err);
+      setError(getErrorMessage(err) || "Failed to load exams");
+      console.error("Failed to load exams:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const loadQuiz = useCallback(async (id: string) => {
+  const loadExam = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await quizzesApi.getById(id);
-      setSelectedQuiz(data.quiz);
+      const data = await ExamsApi.getById(id);
+      setSelectedExam(data.exam);
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to load quiz");
-      console.error("Failed to load quiz:", err);
+      setError(getErrorMessage(err) || "Failed to load exam");
+      console.error("Failed to load exam:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createQuiz = useCallback(async (quiz: CreateQuizRequest) => {
+  const createExam = useCallback(async (exam: CreateExamRequest) => {
     setLoading(true);
     setError(null);
     try {
-      await quizzesApi.create(quiz);
-      await loadQuizzes();
+      await ExamsApi.create(exam);
+      await loadExams();
       return true;
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to create quiz");
-      console.error("Failed to create quiz:", err);
+      setError(getErrorMessage(err) || "Failed to create exam");
+      console.error("Failed to create exam:", err);
       return false;
     } finally {
       setLoading(false);
     }
-  }, [loadQuizzes]);
+  }, [loadExams]);
 
-  const updateQuiz = useCallback(async (id: string, updates: UpdateQuizRequest) => {
+  const updateExam = useCallback(async (id: string, updates: UpdateExamRequest) => {
     setLoading(true);
     setError(null);
     try {
-      await quizzesApi.update(id, updates);
-      await loadQuizzes();
+      await ExamsApi.update(id, updates);
+      await loadExams();
       return true;
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to update quiz");
-      console.error("Failed to update quiz:", err);
+      setError(getErrorMessage(err) || "Failed to update exam");
+      console.error("Failed to update exam:", err);
       return false;
     } finally {
       setLoading(false);
     }
-  }, [loadQuizzes]);
+  }, [loadExams]);
 
-  const deleteQuiz = useCallback(async (id: string) => {
+  const deleteExam = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     try {
-      await quizzesApi.delete(id);
-      await loadQuizzes();
+      await ExamsApi.delete(id);
+      await loadExams();
       return true;
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to delete quiz");
-      console.error("Failed to delete quiz:", err);
+      setError(getErrorMessage(err) || "Failed to delete exam");
+      console.error("Failed to delete exam:", err);
       return false;
     } finally {
       setLoading(false);
     }
-  }, [loadQuizzes]);
+  }, [loadExams]);
 
   const updateStatus = useCallback(async (
     id: string,
@@ -101,8 +101,8 @@ export function useQuizzes() {
     setLoading(true);
     setError(null);
     try {
-      await quizzesApi.updateStatus(id, status);
-      await loadQuizzes();
+      await ExamsApi.updateStatus(id, status);
+      await loadExams();
       return true;
     } catch (err: unknown) {
       setError(getErrorMessage(err) || "Failed to update status");
@@ -111,13 +111,13 @@ export function useQuizzes() {
     } finally {
       setLoading(false);
     }
-  }, [loadQuizzes]);
+  }, [loadExams]);
 
   const loadStatistics = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await quizzesApi.getStatistics(id);
+      const data = await ExamsApi.getStatistics(id);
       setStatistics(data);
     } catch (err: unknown) {
       setError(getErrorMessage(err) || "Failed to load statistics");
@@ -128,17 +128,17 @@ export function useQuizzes() {
   }, []);
 
   return {
-    quizzes,
-    selectedQuiz,
+    exams,
+    selectedExam,
     statistics,
     loading,
     error,
     total,
-    loadQuizzes,
-    loadQuiz,
-    createQuiz,
-    updateQuiz,
-    deleteQuiz,
+    loadExams,
+    loadExam,
+    createExam,
+    updateExam,
+    deleteExam,
     updateStatus,
     loadStatistics,
   };

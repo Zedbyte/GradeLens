@@ -16,7 +16,7 @@ import type { Template } from "@/types/template.types";
 import type { FramePreviewResponse } from "@packages/types/scans/scans.types";
 
 interface LiveScannerProps {
-  selectedQuiz?: string;
+  selectedExam?: string;
   selectedStudent?: string;
   template?: Template;
   onCapture: (imageData: string) => void;
@@ -29,7 +29,7 @@ const VIDEO_CONSTRAINTS = {
 };
 
 export function LiveScanner({
-  selectedQuiz,
+  selectedExam,
   selectedStudent,
   template,
   onCapture,
@@ -366,7 +366,7 @@ export function LiveScanner({
   }, [isReady, template, startPreview, stopPreview]);
 
   const handleCapture = useCallback(() => {
-    if (!webcamRef.current || !selectedQuiz || !selectedStudent) return;
+    if (!webcamRef.current || !selectedExam || !selectedStudent) return;
 
     // Capture at actual video resolution for best quality
     const imageSrc = webcamRef.current.getScreenshot();
@@ -375,7 +375,7 @@ export function LiveScanner({
       const base64Data = imageSrc.replace(/^data:image\/\w+;base64,/, "");
       onCapture(base64Data);
     }
-  }, [selectedQuiz, selectedStudent, onCapture]);
+  }, [selectedExam, selectedStudent, onCapture]);
 
   const handleUserMedia = useCallback(() => {
     setIsReady(true);
@@ -391,14 +391,14 @@ export function LiveScanner({
     console.error("Camera error:", err);
   }, []);
 
-  const canCapture = selectedQuiz && selectedStudent && isReady;
+  const canCapture = selectedExam && selectedStudent && isReady;
 
   const alertMessage = (() => {
-    if (!selectedQuiz) {
-      return "Please select a quiz before scanning";
+    if (!selectedExam) {
+      return "Please select a exam before scanning";
     }
 
-    if (selectedQuiz && !template) {
+    if (selectedExam && !template) {
       return "Please select an assessment to load the template guide";
     }
 

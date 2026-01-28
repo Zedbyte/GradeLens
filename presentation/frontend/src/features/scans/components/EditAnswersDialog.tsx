@@ -73,7 +73,7 @@ export function EditAnswersDialog({
             <div className="space-y-3">
               <div className="sticky -top-1 bg-background z-10 pb-3 border-b">
                 <h4 className="text-sm font-semibold">Answer Key</h4>
-                <p className="text-xs text-muted-foreground">Correct answers for this quiz</p>
+                <p className="text-xs text-muted-foreground">Correct answers for this exam</p>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                 {answers.map((answer) => (
