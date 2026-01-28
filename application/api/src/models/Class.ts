@@ -15,8 +15,7 @@ export interface IClass {
   student_ids: Types.ObjectId[]; // References to Student documents
   academic_year: string;         // e.g., "2025-2026"
   grade_id?: Types.ObjectId;     // Reference to Grade document
-  section_id?: Types.ObjectId;   // Reference to Section document
-  subject?: string;              // e.g., "Mathematics", "Science"
+  section_ids?: Types.ObjectId[]; // References to Section documents (class may belong to many sections)
   status: "active" | "archived" | "completed";
   metadata?: {
     schedule?: string;           // e.g., "MWF 9:00-10:00"
@@ -73,15 +72,12 @@ const ClassSchema = new Schema<IClass, IClassModel>(
       ref: "Grade",
       index: true
     },
-    section_id: {
+    section_ids: [{
       type: Schema.Types.ObjectId,
       ref: "Section",
       index: true
-    },
-    subject: {
-      type: String,
-      trim: true
-    },
+    }],
+    // `subject` removed: class can belong to many sections instead
     status: {
       type: String,
       enum: ["active", "archived", "completed"],

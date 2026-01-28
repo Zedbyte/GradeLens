@@ -10,7 +10,7 @@ import { getErrorMessage } from "@/lib/error";
 
 interface StudentSelectorProps {
   gradeId?: string;
-  sectionId?: string;
+  sectionIds?: string[];
   selectedStudentIds: string[];
   onStudentToggle: (studentId: string) => void;
   onSelectAll: (studentIds: string[]) => void;
@@ -19,7 +19,7 @@ interface StudentSelectorProps {
 
 export function StudentSelector({
   gradeId,
-  sectionId,
+  sectionIds,
   selectedStudentIds,
   onStudentToggle,
   onSelectAll,
@@ -49,9 +49,9 @@ export function StudentSelector({
           (student) => student.grade_id === gradeId
         );
 
-        if (sectionId) {
+        if (sectionIds && sectionIds.length > 0) {
           filteredStudents = filteredStudents.filter(
-            (student) => student.section_id === sectionId
+            (student) => student.section_id && sectionIds.includes(student.section_id)
           );
         }
 
@@ -65,7 +65,7 @@ export function StudentSelector({
     };
 
     fetchStudents();
-  }, [gradeId, sectionId]);
+  }, [gradeId, sectionIds]);
 
   const allSelected = students.length > 0 && students.every(
     (student) => selectedStudentIds.includes(student._id)
@@ -102,7 +102,7 @@ export function StudentSelector({
   if (students.length === 0) {
     return (
       <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-        No students found in this {sectionId ? "section" : "grade"}
+        No students found in this {sectionIds && sectionIds.length > 0 ? "section(s)" : "grade"}
       </div>
     );
   }

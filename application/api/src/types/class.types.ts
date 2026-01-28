@@ -12,8 +12,7 @@ export interface Class {
   student_ids: string[];         // Array of Student ObjectIds
   student_count?: number;        // Virtual field
   academic_year: string;         // e.g., "2025-2026"
-  section?: string;
-  subject?: string;
+  section_ids?: string[];
   status: "active" | "archived" | "completed";
   metadata?: {
     schedule?: string;
@@ -30,7 +29,7 @@ export interface CreateClassRequest {
   name: string;
   description?: string;
   academic_year: string;
-  section?: string;
+  section_ids?: string[];
   subject?: string;
   student_ids?: string[];
   metadata?: {
@@ -45,7 +44,7 @@ export interface UpdateClassRequest {
   description?: string;
   academic_year?: string;
   grade_id?: string;
-  section_id?: string;
+  section_ids?: string[];
   subject?: string;
   status?: "active" | "archived" | "completed";
   student_ids?: string[];  // Allow updating student list

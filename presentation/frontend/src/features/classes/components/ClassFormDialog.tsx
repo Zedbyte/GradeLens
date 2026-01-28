@@ -24,8 +24,7 @@ const classSchema = z.object({
   name: z.string().min(1, "Class name is required"),
   academic_year: z.string().min(1, "Academic year is required"),
   grade_id: z.string().optional(),
-  section_id: z.string().optional(),
-  subject: z.string().optional(),
+  section_ids: z.array(z.string()).optional(),
   status: z.enum(["active", "completed", "archived"]),
   student_ids: z.array(z.string()).optional(),
 });
@@ -53,7 +52,7 @@ export function ClassFormDialog({
 }: ClassFormDialogProps) {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectedGradeId, setSelectedGradeId] = useState<string>("");
-  const [selectedSectionId, setSelectedSectionId] = useState<string>("");
+  const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([]);
 
   const {
     register,
@@ -66,6 +65,7 @@ export function ClassFormDialog({
     resolver: zodResolver(classSchema),
     defaultValues: {
       status: "active",
+      section_ids: [],
     },
   });
 
@@ -75,11 +75,10 @@ export function ClassFormDialog({
       setValue("name", classData.name);
       setValue("academic_year", classData.academic_year);
       setValue("grade_id", classData.grade_id || "");
-      setValue("section_id", classData.section_id || "");
-      setValue("subject", classData.subject || "");
+      setValue("section_ids", classData.section_ids || []);
       setValue("status", classData.status);
       setSelectedGradeId(classData.grade_id || "");
-      setSelectedSectionId(classData.section_id || "");
+      setSelectedSectionIds(classData.section_ids || []);
       setSelectedStudentIds(classData.student_ids || []);
     } else {
       reset({
@@ -87,27 +86,21 @@ export function ClassFormDialog({
         name: "",
         academic_year: new Date().getFullYear().toString(),
         grade_id: "",
-        section_id: "",
-        subject: "",
+        section_ids: [],
         status: "active",
       });
       setSelectedGradeId("");
-      setSelectedSectionId("");
+      setSelectedSectionIds([]);
       setSelectedStudentIds([]);
     }
   }, [classData, mode, setValue, reset]);
 
   // Watch grade and section changes
   const gradeId = watch("grade_id");
-  const sectionId = watch("section_id");
 
   useEffect(() => {
     setSelectedGradeId(gradeId || "");
   }, [gradeId]);
-
-  useEffect(() => {
-    setSelectedSectionId(sectionId || "");
-  }, [sectionId]);
 
   const handleStudentToggle = (studentId: string) => {
     setSelectedStudentIds((prev) =>
@@ -134,7 +127,7 @@ export function ClassFormDialog({
     const cleanData = {
       ...data,
       grade_id: data.grade_id || undefined,
-      section_id: data.section_id || undefined,
+      section_ids: selectedSectionIds.length > 0 ? selectedSectionIds : undefined,
       student_ids: selectedStudentIds.length > 0 ? selectedStudentIds : undefined,
     };
     const success = await onSubmit(cleanData);
@@ -142,7 +135,7 @@ export function ClassFormDialog({
       reset();
       setSelectedStudentIds([]);
       setSelectedGradeId("");
-      setSelectedSectionId("");
+      setSelectedSectionIds([]);
       onOpenChange(false);
     }
   };
@@ -206,32 +199,25 @@ export function ClassFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
-              <Input
-                id="subject"
-                {...register("subject")}
-                placeholder="e.g., Mathematics"
-              />
-            </div>
+            <div>
+              <div className="space-y-2" />
 
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                {...register("status")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-              >
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
-              </select>
-              {errors.status && (
-                <p className="text-sm text-destructive">{errors.status.message}</p>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <select
+                  id="status"
+                  {...register("status")}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                >
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </select>
+                {errors.status && (
+                  <p className="text-sm text-destructive">{errors.status.message}</p>
+                )}
+              </div>
             </div>
-          </div>
 
           <div className="space-y-4 rounded-lg border p-4">
             <div className="flex items-center gap-2">
@@ -256,19 +242,24 @@ export function ClassFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="section_id">Section</Label>
-              <select
-                id="section_id"
-                {...register("section_id")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-              >
-                <option value="">Select Section</option>
+              <Label htmlFor="section_ids">Sections</Label>
+              <div className="flex flex-col gap-2">
                 {sections.map((section) => (
-                  <option key={section._id} value={section._id}>
-                    {section.name}
-                  </option>
+                  <label key={section._id} className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      value={section._id}
+                      checked={selectedSectionIds.includes(section._id)}
+                      onChange={() => {
+                        setSelectedSectionIds((prev) =>
+                          prev.includes(section._id) ? prev.filter((s) => s !== section._id) : [...prev, section._id]
+                        );
+                      }}
+                    />
+                    <span>{section.name}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
           </div>
           </div>
@@ -281,7 +272,7 @@ export function ClassFormDialog({
             </div>
             <StudentSelector
               gradeId={selectedGradeId}
-              sectionId={selectedSectionId}
+              sectionIds={selectedSectionIds}
               selectedStudentIds={selectedStudentIds}
               onStudentToggle={handleStudentToggle}
               onSelectAll={handleSelectAll}

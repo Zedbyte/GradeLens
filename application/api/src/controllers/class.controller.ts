@@ -35,7 +35,10 @@ export class ClassController {
         teacher_id: userId,
         created_by: userId,
         status: "active",
-        student_ids: []  // Initialize empty, will be added via sync service
+        student_ids: [], // Initialize empty, will be added via sync service
+        section_ids: data.section_ids && data.section_ids.length > 0
+          ? data.section_ids.map(id => typeof id === 'string' ? new Types.ObjectId(id) : id)
+          : []
       });
 
       await classDoc.save();
@@ -166,6 +169,16 @@ export class ClassController {
         
         // Remove student_ids from updates as it's already handled
         delete updates.student_ids;
+      }
+
+      // If section_ids are being updated, assign them (no sync service required)
+      if (updates.section_ids) {
+        const sectionObjectIds = updates.section_ids.map(id =>
+          typeof id === 'string' ? new Types.ObjectId(id) : id
+        );
+        classDoc.section_ids = sectionObjectIds;
+        // remove from updates so Object.assign doesn't overwrite with raw values
+        delete updates.section_ids;
       }
 
       // Update remaining fields
