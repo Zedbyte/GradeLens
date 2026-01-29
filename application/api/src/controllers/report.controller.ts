@@ -6,6 +6,7 @@ import { ClassModel } from "../models/Class.ts";
 import { SectionModel } from "../models/Section.ts";
 import { StudentModel } from "../models/Student.ts";
 import { Types } from "mongoose";
+import { computeRanks } from "../lib/ranking.ts";
 
 /**
  * Report Controller
@@ -186,6 +187,360 @@ export class ReportController {
         res.json({ sections: sectionResults });
         } catch (error) {
         next(error);
+        }
+    }
+
+    /**
+     * GET /api/reports/item-entries
+     * Returns per-question performance analysis by section or aggregated
+     * 
+     * Query params:
+     * - grade_id: string (required)
+     * - class_id: string (required)
+     * - exam_id: string (required)
+     * - view: "section" | "overall" (optional, defaults to "section")
+     */
+    static async getItemEntries(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { grade_id, class_id, exam_id, view = "section" } = req.query;
+
+            // Validate required parameters
+            if (!grade_id || !class_id || !exam_id) {
+                return res.status(400).json({ 
+                    error: "Missing required parameters: grade_id, class_id, exam_id" 
+                });
+            }
+
+            // Validate view parameter
+            if (view !== "section" && view !== "overall") {
+                return res.status(400).json({ 
+                    error: "Invalid view parameter. Must be 'section' or 'overall'" 
+                });
+            }
+
+            const classObjectId = new Types.ObjectId(class_id as string);
+            const examObjectId = new Types.ObjectId(exam_id as string);
+
+            // Fetch and validate class
+            const classDoc = await ClassModel.findById(classObjectId).lean();
+            if (!classDoc) {
+                return res.status(404).json({ error: "Class not found" });
+            }
+
+            // Fetch and validate exam
+            const examDoc = await ExamModel.findById(examObjectId).lean();
+            if (!examDoc) {
+                return res.status(404).json({ error: "Exam not found" });
+            }
+
+            // Validate exam belongs to selected class
+            if (examDoc.class_id && !examDoc.class_id.equals(classObjectId)) {
+                return res.status(400).json({ 
+                    error: "Selected exam does not belong to the selected class" 
+                });
+            }
+
+            // Validate exam has answers
+            if (!examDoc.answers || examDoc.answers.length === 0) {
+                return res.status(400).json({ 
+                    error: "Exam has no answer key defined" 
+                });
+            }
+
+            // Get section_ids from class
+            const sectionIds = classDoc.section_ids || [];
+            if (sectionIds.length === 0) {
+                return res.json({ 
+                    view,
+                    sections: [],
+                    overall: null 
+                });
+            }
+
+            // Fetch all sections
+            const sections = await SectionModel.find({
+                _id: { $in: sectionIds },
+                is_active: true
+            }).lean();
+
+            if (sections.length === 0) {
+                return res.json({ 
+                    view,
+                    sections: [],
+                    overall: null 
+                });
+            }
+
+            // Build question map from exam answers
+            const questionMap = new Map<number, string>();
+            for (const ans of examDoc.answers) {
+                questionMap.set(Number(ans.question_id), ans.correct);
+            }
+
+            const totalQuestions = examDoc.answers.length;
+
+            // Process each section
+            const sectionResults = await Promise.all(
+                sections.map(async (section) => {
+                    // Student query with proper field handling
+                    const studentQuery = {
+                        $and: [
+                            {
+                                $or: [
+                                    { section_id: section._id },
+                                    {
+                                        $and: [
+                                            { section_id: { $exists: false } },
+                                            { class_ids: classObjectId }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                $or: [
+                                    { is_active: true },
+                                    { status: "active" }
+                                ]
+                            }
+                        ]
+                    };
+
+                    const students = await StudentModel.find(studentQuery).lean();
+                    const studentIds = students.map((s) => s._id);
+
+                    // Edge case: no students in section
+                    if (studentIds.length === 0) {
+                        return {
+                            section_id: section._id.toString(),
+                            section_name: section.name || section.section_id || "Unnamed Section",
+                            items: [],
+                            metadata: {
+                                total_students: 0,
+                                total_questions: totalQuestions,
+                                students_took_exam: 0,
+                                section_total_correct: 0
+                            }
+                        };
+                    }
+
+                    // Fetch all graded scans for this exam and these students
+                    // Use aggregation to get only the most recent scan per student (prevent double counting)
+                    const scans = await ScanModel.aggregate([
+                        {
+                            $match: {
+                                exam_id: examObjectId,
+                                student_id: { $in: studentIds },
+                                status: "graded",
+                                "detection_result.detections": { $exists: true }
+                            }
+                        },
+                        {
+                            $sort: { createdAt: -1 }
+                        },
+                        {
+                            $group: {
+                                _id: "$student_id",
+                                scan: { $first: "$$ROOT" }
+                            }
+                        },
+                        {
+                            $replaceRoot: { newRoot: "$scan" }
+                        }
+                    ]);
+
+                    const studentsTookExam = scans.length;
+
+                    // Build per-question correctness tracking
+                    // questionCorrectness[questionNumber] = count of students who got it right
+                    const questionCorrectness = new Map<number, number>();
+                    
+                    // Initialize all questions with 0 (use numeric keys)
+                    for (const ans of examDoc.answers) {
+                        questionCorrectness.set(Number(ans.question_id), 0);
+                    }
+
+                    let sectionTotalCorrect = 0;
+
+                    // Process each scan's detections
+                    for (const scan of scans) {
+                        const detections = scan.detection_result?.detections || [];
+
+                        for (const detection of detections) {
+                            const questionId = Number(detection.question_id);
+                            let studentAnswer = detection.selected;
+
+                            // Normalize student answer to string for comparison
+                            if (studentAnswer == null) continue;
+                            if (Array.isArray(studentAnswer)) studentAnswer = studentAnswer.join(",");
+
+                            // Skip if question not in answer key
+                            if (!questionMap.has(questionId)) continue;
+
+                            const correctAnswerRaw = questionMap.get(questionId);
+                            if (correctAnswerRaw == null) continue;
+
+                            const studentStr = String(studentAnswer).trim().toUpperCase();
+                            const correctStr = String(correctAnswerRaw).trim().toUpperCase();
+
+                            // Check if student answer matches correct answer (case-insensitive)
+                            if (studentStr !== "" && studentStr === correctStr) {
+                                const currentCount = questionCorrectness.get(questionId) || 0;
+                                questionCorrectness.set(questionId, currentCount + 1);
+                                sectionTotalCorrect++;
+                            }
+                        }
+                    }
+
+                    // Build items array
+                    let items = Array.from(examDoc.answers).map((ans) => {
+                        const questionId = Number(ans.question_id);
+                        const correctCount = questionCorrectness.get(questionId) || 0;
+                        const percentage = studentsTookExam > 0 
+                            ? (correctCount / studentsTookExam) * 100 
+                            : 0;
+                        
+                        // Determine remark based on percentage
+                        let remark: "M" | "NM" | "NTM";
+                        if (percentage >= 75) {
+                            remark = "M";
+                        } else if (percentage >= 60) {
+                            remark = "NM";
+                        } else {
+                            remark = "NTM";
+                        }
+
+                        return {
+                            question_number: questionId,
+                            correct_count: correctCount,
+                            total_students: studentsTookExam,
+                            percentage: parseFloat(percentage.toFixed(2)),
+                            remark
+                        };
+                    });
+
+                    // Compute ranks for this section's items (handles ties)
+                    const rankMap = computeRanks(items as Array<{ question_number: number; percentage: number }>);
+
+                    // Attach rank info to items
+                    items = items.map((it) => {
+                        const r = rankMap.get(it.question_number);
+                        return {
+                            ...it,
+                            rank_label: r ? r.rankLabel : null,
+                            rank_numbers: r ? r.rankNumbers : []
+                        };
+                    });
+
+                    // Sort by question number for consistent display
+                    items.sort((a, b) => a.question_number - b.question_number);
+
+                    return {
+                        section_id: section._id.toString(),
+                        section_name: section.name || section.section_id || "Unnamed Section",
+                        items,
+                        metadata: {
+                            total_students: studentIds.length,
+                            total_questions: totalQuestions,
+                            students_took_exam: studentsTookExam,
+                            section_total_correct: sectionTotalCorrect
+                        }
+                    };
+                })
+            );
+
+            // Calculate overall statistics if view is "overall"
+            let overallData = null;
+            if (view === "overall") {
+                // Aggregate across all sections
+                const overallQuestionCorrectness = new Map<number, number>();
+                let overallTotalCorrect = 0;
+                let overallStudentsTookExam = 0;
+
+                // Initialize all questions
+                for (const ans of examDoc.answers) {
+                    overallQuestionCorrectness.set(Number(ans.question_id), 0);
+                }
+
+                // Sum up correct counts from all sections
+                for (const section of sectionResults) {
+                    overallStudentsTookExam += section.metadata.students_took_exam;
+                    overallTotalCorrect += section.metadata.section_total_correct;
+
+                    for (const item of section.items) {
+                        const currentCount = overallQuestionCorrectness.get(item.question_number) || 0;
+                        overallQuestionCorrectness.set(
+                            item.question_number, 
+                            currentCount + item.correct_count
+                        );
+                    }
+                }
+
+                // Build overall items
+                let overallItems = Array.from(examDoc.answers).map((ans) => {
+                    const questionId = Number(ans.question_id);
+                    const correctCount = overallQuestionCorrectness.get(questionId) || 0;
+                    const percentage = overallStudentsTookExam > 0 
+                        ? (correctCount / overallStudentsTookExam) * 100 
+                        : 0;
+                    
+                    // Determine remark
+                    let remark: "M" | "NM" | "NTM";
+                    if (percentage >= 75) {
+                        remark = "M";
+                    } else if (percentage >= 60) {
+                        remark = "NM";
+                    } else {
+                        remark = "NTM";
+                    }
+
+                    return {
+                        question_number: questionId,
+                        correct_count: correctCount,
+                        total_students: overallStudentsTookExam,
+                        percentage: parseFloat(percentage.toFixed(2)),
+                        remark
+                    };
+                });
+
+                // Compute ranks for overall items and attach
+                const overallRankMap = computeRanks(overallItems as Array<{ question_number: number; percentage: number }>);
+                overallItems = overallItems.map((it) => {
+                    const r = overallRankMap.get(it.question_number);
+                    return {
+                        ...it,
+                        rank_label: r ? r.rankLabel : null,
+                        rank_numbers: r ? r.rankNumbers : []
+                    };
+                });
+
+                // Sort by question number
+                overallItems.sort((a, b) => a.question_number - b.question_number);
+
+                // Calculate overall percentage
+                const totalPossibleCorrect = overallStudentsTookExam * totalQuestions;
+                const overallPercentage = totalPossibleCorrect > 0
+                    ? (overallTotalCorrect / totalPossibleCorrect) * 100
+                    : 0;
+
+                overallData = {
+                    items: overallItems,
+                    metadata: {
+                        total_students_took_exam: overallStudentsTookExam,
+                        total_questions: totalQuestions,
+                        total_correct: overallTotalCorrect,
+                        total_possible: totalPossibleCorrect,
+                        overall_percentage: parseFloat(overallPercentage.toFixed(2))
+                    }
+                };
+            }
+
+            res.json({ 
+                view,
+                sections: sectionResults,
+                overall: overallData 
+            });
+        } catch (error) {
+            next(error);
         }
     }
 }

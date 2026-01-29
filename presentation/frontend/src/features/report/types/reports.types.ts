@@ -1,8 +1,13 @@
-// types/reports.types.ts
+// features/report/types/reports.types.ts
 
 /**
- * PL Entries API Response Types
+ * PL Entries Types
  */
+export interface PLEntriesQueryParams {
+  grade_id: string;
+  class_id: string;
+  exam_id: string;
+}
 
 export interface PLEntriesDistributionRow {
   score: number;
@@ -36,8 +41,54 @@ export interface PLEntriesResponse {
   sections: PLEntriesSection[];
 }
 
-export interface PLEntriesQueryParams {
+/**
+ * Item Entries Types
+ */
+export interface ItemEntriesItem {
+  question_number: number;
+  correct_count: number;
+  total_students: number;
+  rank_label: string | null;
+  percentage: number;
+  remark: "M" | "NM" | "NTM";
+}
+
+export interface ItemEntriesSectionMetadata {
+  total_students: number;
+  total_questions: number;
+  students_took_exam: number;
+  section_total_correct: number;
+}
+
+export interface IItemEntriesSection {
+  section_id: string;
+  section_name: string;
+  items: ItemEntriesItem[];
+  metadata: ItemEntriesSectionMetadata;
+}
+
+export interface ItemEntriesOverallMetadata {
+  total_students_took_exam: number;
+  total_questions: number;
+  total_correct: number;
+  total_possible: number;
+  overall_percentage: number;
+}
+
+export interface IItemEntriesOverall {
+  items: ItemEntriesItem[];
+  metadata: ItemEntriesOverallMetadata;
+}
+
+export interface ItemEntriesResponse {
+  view: "section" | "overall";
+  sections: IItemEntriesSection[];
+  overall: IItemEntriesOverall | null;
+}
+
+export interface ItemEntriesQueryParams {
   grade_id: string;
   class_id: string;
   exam_id: string;
+  view?: "section" | "overall";
 }

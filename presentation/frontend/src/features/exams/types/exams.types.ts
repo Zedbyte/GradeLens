@@ -8,7 +8,7 @@ export interface Exam {
   template_id: string;
   name: string;
   description?: string;
-  class_id?: string;
+  class_id?: string | { _id: string } ;
   scheduled_date?: string;
   due_date?: string;
   answers: Array<{

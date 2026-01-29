@@ -30,11 +30,21 @@ export default function ReportPage() {
     const [selectedGrade, setSelectedGrade] = useState<string>("");
     const [selectedClass, setSelectedClass] = useState<string>("");
     const [selectedExam, setSelectedExam] = useState<string>("");
+    const [activeTab, setActiveTab] = useState<string>("pl-entries");
+    const [itemView, setItemView] = useState<"section" | "overall">("section");
 
     const { grades, loadGrades } = useGrades();
     const { classes, loadClasses } = useClasses();
     const { exams, loadExams } = useExams();
-    const { plData, loading: isLoadingReport, error: reportError, loadPLEntries, reset } = useReports();
+    const { 
+      plData, 
+      itemData,
+      loading: isLoadingReport, 
+      error: reportError, 
+      loadPLEntries,
+      loadItemEntries,
+      reset 
+    } = useReports();
 
     useEffect(() => {
         loadGrades();
@@ -43,6 +53,19 @@ export default function ReportPage() {
         // intentionally run once on mount
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Add useEffect to reload item entries when view changes
+    useEffect(() => {
+        if (plData && selectedGrade && selectedClass && selectedExam) {
+            loadItemEntries({
+                grade_id: selectedGrade,
+                class_id: selectedClass,
+                exam_id: selectedExam,
+                view: itemView,
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [itemView]);
 
     // Filter classes by selected grade
     const availableClasses = useMemo(() => {
@@ -100,11 +123,40 @@ export default function ReportPage() {
     const handleGenerateReport = async () => {
         if (!isReady) return;
 
-        await loadPLEntries({
-        grade_id: selectedGrade,
-        class_id: selectedClass,
-        exam_id: selectedExam,
-        });
+        // Load both reports
+        await Promise.all([
+            loadPLEntries({
+                grade_id: selectedGrade,
+                class_id: selectedClass,
+                exam_id: selectedExam,
+            }),
+            loadItemEntries({
+                grade_id: selectedGrade,
+                class_id: selectedClass,
+                exam_id: selectedExam,
+                view: itemView,
+            })
+        ]);
+    };
+
+    // Handle tab change - load data if not already loaded
+    const handleTabChange = async (value: string) => {
+        setActiveTab(value);
+
+        if (!isReady) return;
+
+        const params = {
+            grade_id: selectedGrade,
+            class_id: selectedClass,
+            exam_id: selectedExam,
+        };
+
+        // Lazy load data when switching tabs
+        if (value === "pl-entries" && !plData) {
+            await loadPLEntries(params);
+        } else if (value === "item-entries" && !itemData) {
+            await loadItemEntries(params);
+        }
     };
 
     return (
@@ -225,8 +277,8 @@ export default function ReportPage() {
             </Card>
 
             {/* Tabs - Always visible after first generation attempt */}
-            {(plData || isLoadingReport || reportError) && (
-            <Tabs defaultValue="pl-entries" className="w-full">
+            {(plData || itemData || isLoadingReport || reportError) && (
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="pl-entries">
                     <IconGauge className="w-4 h-4 mr-2" />
@@ -245,16 +297,37 @@ export default function ReportPage() {
                 <TabsContent value="pl-entries" className="mt-6">
                 <PLEntries
                     sections={plData?.sections || []}
-                    isLoading={isLoadingReport}
-                    error={reportError}
+                    isLoading={isLoadingReport && activeTab === "pl-entries"}
+                    error={activeTab === "pl-entries" ? reportError : null}
                 />
                 </TabsContent>
 
                 <TabsContent value="item-entries" className="mt-6">
-                <ItemEntries
-                    sectionIds={[]}
-                    classId={selectedClass}
-                />
+                    {/* View Toggle */}
+                    <div className="mb-4 flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">View:</span>
+                        <Button
+                            variant={itemView === "section" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setItemView("section")}
+                        >
+                            By Section
+                        </Button>
+                        <Button
+                            variant={itemView === "overall" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setItemView("overall")}
+                        >
+                            Overall
+                        </Button>
+                    </div>
+                    <ItemEntries
+                        sections={itemData?.sections || []}
+                        overall={itemData?.overall || null}
+                        view={itemView}
+                        isLoading={isLoadingReport && activeTab === "item-entries"}
+                        error={activeTab === "item-entries" ? reportError : null}
+                    />
                 </TabsContent>
 
                 <TabsContent value="summary" className="mt-6">
