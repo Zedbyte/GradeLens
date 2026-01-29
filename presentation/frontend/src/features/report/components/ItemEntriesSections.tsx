@@ -98,11 +98,11 @@ export const ItemEntriesSections: React.FC<Props> = ({ sections, expandedSection
                     <div className="grid gap-2 sm:grid-cols-6 lg:grid-cols-10">
                       {filteredItems.map((item) => (
                         <div key={item.question_number} className={`flex flex-col items-center rounded border ${item.remark === "M" ? "bg-green-500/20 border-green-500" : item.remark === "NM" ? "bg-yellow-500/20 border-yellow-500" : "bg-red-500/20 border-red-500"} p-2 text-center transition-all hover:scale-105 hover:shadow-md cursor-pointer`} title={`Q${item.question_number}: ${item.percentage}% (${item.correct_count}/${item.total_students})`}>
-                          <div className="flex items-center gap-1">
-                            {item.rank_label && (<span className="text-[10px] text-muted-foreground font-mono">#{item.rank_label}</span>)}
+                          <div className="flex flex-col items-center gap-1">
                             <span className={`text-xs font-bold ${item.remark === "M" ? "text-green-700" : item.remark === "NM" ? "text-yellow-700" : "text-red-700"}`}>Q{item.question_number}</span>
+                            <span className={`text-xs font-semibold ${item.remark === "M" ? "text-green-700" : item.remark === "NM" ? "text-yellow-700" : "text-red-700"}`}>{item.percentage}%</span>
+                            <span className="text-[11px] text-muted-foreground">{item.correct_count ?? 0} correct</span>
                           </div>
-                          <span className={`text-xs font-semibold ${item.remark === "M" ? "text-green-700" : item.remark === "NM" ? "text-yellow-700" : "text-red-700"}`}>{item.percentage}%</span>
                         </div>
                       ))}
                     </div>

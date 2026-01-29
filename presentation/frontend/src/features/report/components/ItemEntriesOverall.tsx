@@ -50,7 +50,7 @@ export const ItemEntriesOverall: React.FC<Props> = ({ overall, selectedFilter, s
         </CardHeader>
 
         <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 mb-6">
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-6">
             <div className="rounded-lg bg-background p-3 border border-border/50">
                 <p className="text-xs font-medium text-muted-foreground">Students Took Exam</p>
                 <p className="mt-1 text-lg font-bold text-foreground">{metadata.total_students_took_exam}</p>
@@ -71,6 +71,10 @@ export const ItemEntriesOverall: React.FC<Props> = ({ overall, selectedFilter, s
                 <p className="text-xs font-medium text-yellow-700">Developing (60-74%)</p>
                 <p className="mt-1 text-lg font-bold text-yellow-700">{developingCount} / {metadata.total_questions}</p>
             </div>
+            <div className="rounded-lg bg-red-500/10 p-3 border border-red-500/20">
+                <p className="text-xs font-medium text-red-700">Struggling (&lt;60%)</p>
+                <p className="mt-1 text-lg font-bold text-red-700">{strugglingCount} / {metadata.total_questions}</p>
+            </div>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">
@@ -85,11 +89,11 @@ export const ItemEntriesOverall: React.FC<Props> = ({ overall, selectedFilter, s
             <div className="grid gap-2 sm:grid-cols-6 lg:grid-cols-10">
                 {filteredItems.map((item) => (
                 <div key={item.question_number} className={`flex flex-col items-center rounded border ${item.remark === "M" ? "bg-green-500/20 border-green-500" : item.remark === "NM" ? "bg-yellow-500/20 border-yellow-500" : "bg-red-500/20 border-red-500"} p-2 text-center transition-all hover:scale-105 hover:shadow-md cursor-pointer`} title={`Q${item.question_number}: ${item.percentage}% (${item.correct_count}/${item.total_students})`}>
-                    <div className="flex items-center gap-1">
-                    {item.rank_label && (<span className="text-[10px] text-muted-foreground font-mono">#{item.rank_label}</span>)}
+                    <div className="flex flex-col items-center gap-1">
                     <span className={`text-xs font-bold ${item.remark === "M" ? "text-green-700" : item.remark === "NM" ? "text-yellow-700" : "text-red-700"}`}>Q{item.question_number}</span>
-                    </div>
                     <span className={`text-xs font-semibold ${item.remark === "M" ? "text-green-700" : item.remark === "NM" ? "text-yellow-700" : "text-red-700"}`}>{item.percentage}%</span>
+                    <span className="text-[11px] text-muted-foreground">{item.correct_count ?? 0} correct</span>
+                    </div>
                 </div>
                 ))}
             </div>
