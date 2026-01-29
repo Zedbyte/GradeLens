@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import type { Section } from "../types/sections.types";
 import type { Grade } from "../../grades/types/grades.types";
+import { extractId } from "@/lib/extractId";
 
 const sectionSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -57,7 +58,7 @@ export function SectionFormDialog({
     if (section && mode === "edit") {
       setValue("name", section.name);
       setValue("description", section.description || "");
-      setValue("grade_id", typeof section.grade_id === "string" ? section.grade_id : section.grade_id?._id || "");
+      setValue("grade_id", extractId(section.grade_id) || "");
       // section_id is not set in the form; it is managed by backend
     } else {
       reset({

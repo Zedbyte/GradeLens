@@ -17,6 +17,7 @@ import { AssessmentSelection } from "../features/scans/components/AssessmentSele
 import { ScanQueue } from "../features/scans/components/ScanQueue";
 import { ScanDetails } from "../features/scans/components/ScanDetails";
 import type { Class } from "@/features/classes";
+import { extractId } from "@/lib/extractId";
 
 export function ScanPage() {
   // State for filters
@@ -78,13 +79,8 @@ export function ScanPage() {
 
   // Filter sections by selected grade
   const filteredSections = selectedGrade
-    ? sections.filter(s => {
-        if (typeof s.grade_id === "object" && s.grade_id?._id) {
-          return s.grade_id._id === selectedGrade;
-        }
-        return s.grade_id === selectedGrade;
-      })
-    : sections;
+      ? sections.filter(s => extractId(s.grade_id) === selectedGrade)
+      : sections;
 
   // Filter classes by selected grade/section
   const filteredClasses = classes.filter(c => {

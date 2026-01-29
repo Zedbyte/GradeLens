@@ -25,6 +25,7 @@ import {
   IconClipboardList,
   IconGauge,
 } from "@tabler/icons-react";
+import { extractId } from "@/lib/extractId";
 
 export default function ReportPage() {
     const [selectedGrade, setSelectedGrade] = useState<string>("");
@@ -70,20 +71,7 @@ export default function ReportPage() {
     // Filter classes by selected grade
     const availableClasses = useMemo(() => {
         if (!selectedGrade) return [] as ClassType[];
-
-        function getRefId(ref: unknown): string | undefined {
-        if (typeof ref === "string") return ref;
-        if (ref && typeof ref === "object") {
-            const r = ref as Record<string, unknown>;
-            if (typeof r._id === "string") return r._id;
-        }
-        return undefined;
-        }
-
-        return classes.filter((c: ClassType) => {
-        const gid = getRefId(c.grade_id);
-        return gid === selectedGrade;
-        }) as ClassType[];
+        return classes.filter((c: ClassType) => extractId(c.grade_id) === selectedGrade) as ClassType[];
     }, [classes, selectedGrade]);
 
     // Filter exams by selected class
@@ -92,10 +80,7 @@ export default function ReportPage() {
 
         return exams.filter((e: ExamType) => {
         // Handle exam.class_id being ObjectId or string
-        const examClassId =
-            typeof e.class_id === "string"
-            ? e.class_id
-            : e.class_id?._id || e.class_id;
+        const examClassId = extractId(e.class_id);
         return examClassId === selectedClass;
         }) as ExamType[];
     }, [exams, selectedClass]);
