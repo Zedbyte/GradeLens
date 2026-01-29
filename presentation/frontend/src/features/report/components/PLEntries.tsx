@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconChevronDown } from "@tabler/icons-react";
 import { Loading } from "@/components/loading";
+import DistributionBarChart from "@/components/bar-distribution";
+import DistributionTable from "@/components/distribution-table";
 import type { PLEntriesSection } from "@/features/report/types/reports.types";
 
 export interface PLEntriesProps {
@@ -133,90 +135,28 @@ export const PLEntries: React.FC<PLEntriesProps> = ({
                     {metadata.total_points} total points)
                   </div>
 
-                  <div className="space-y-2 mb-6">
+                  <div className="space-y-2 mb-6 border p-5 rounded-md">
                     <p className="text-xs font-semibold text-foreground mb-3">
                       Distribution (f)
                     </p>
-                    <div className="space-y-1">
-                      {distribution.slice(0, 20).map((row, idx) => {
-                        const maxF =
-                          distribution.length > 0
-                            ? Math.max(...distribution.map((r) => r.f))
-                            : 1;
-                        const percentage = maxF > 0 ? (row.f / maxF) * 100 : 0;
-                        return (
-                          <div key={idx} className="flex items-center gap-2 text-xs">
-                            <div className="w-8 font-mono text-right text-muted-foreground">
-                              {row.score}
-                            </div>
-                            <div className="flex-1 h-6 bg-background rounded border border-border/50 overflow-hidden">
-                              <div
-                                className="h-full bg-linear-to-r from-primary to-accent"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                            <div className="w-8 text-right font-semibold text-foreground">
-                              {row.f}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {distribution.length > 20 && (
-                        <div className="pt-2 text-xs text-muted-foreground italic">
-                          ... and {distribution.length - 20} more
-                        </div>
-                      )}
+                    <div className="mb-2">
+                      <DistributionBarChart
+                        data={distribution.map((d) => ({
+                          ...d,
+                          score: String(d.score),
+                        }))}
+                        height={140}
+                        maxTicks={30}
+                        label="Frequency"
+                      />
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-border/50 overflow-hidden">
-                    <div className="overflow-x-auto max-h-80 overflow-y-auto">
-                      <table className="w-full text-xs">
-                        <thead className="sticky top-0 bg-primary/10">
-                          <tr className="border-b border-border">
-                            <th className="px-3 py-2 text-left font-semibold text-foreground">
-                              Score
-                            </th>
-                            <th className="px-3 py-2 text-center font-semibold text-foreground">
-                              f
-                            </th>
-                            <th className="px-3 py-2 text-center font-semibold text-foreground">
-                              fx
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {distribution.map((row, idx) => (
-                            <tr
-                              key={idx}
-                              className="border-b border-border/30 hover:bg-secondary/10"
-                            >
-                              <td className="px-3 py-2 font-medium text-foreground">
-                                {row.score}
-                              </td>
-                              <td className="px-3 py-2 text-center text-foreground">
-                                {row.f}
-                              </td>
-                              <td className="px-3 py-2 text-center text-foreground">
-                                {row.fx}
-                              </td>
-                            </tr>
-                          ))}
-                          <tr className="border-t-2 border-primary bg-primary/5">
-                            <td className="px-3 py-2 font-semibold text-primary">
-                              Total
-                            </td>
-                            <td className="px-3 py-2 text-center font-semibold text-primary">
-                              {statistics.total_f}
-                            </td>
-                            <td className="px-3 py-2 text-center font-semibold text-primary">
-                              {statistics.total_fx}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  <DistributionTable
+                    rows={distribution}
+                    totalF={statistics.total_f}
+                    totalFx={statistics.total_fx}
+                  />
                 </div>
               )}
             </CardContent>

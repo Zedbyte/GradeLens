@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CreateGradeRequest, Grade, UpdateGradeRequest } from "../features/grades/types/grades.types";
 import DataTable from "@/components/data-table";
 import getGradeColumns from "../features/grades/columns/grades.columns";
-import CrudListLayout from "@/components/CrudListLayout";
+import CrudListLayout from "@/layouts/CrudListLayout";
 
 export function GradesPage() {
   const { grades, loading, error, loadGrades, createGrade, updateGrade, deleteGrade } = useGrades();

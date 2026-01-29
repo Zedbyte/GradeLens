@@ -6,7 +6,7 @@ import { useSections } from "@/features/sections/hooks/useSections";
 import type { Class, CreateClassRequest, UpdateClassRequest } from "@/features/classes/types/classes.types";
 import DataTable from "@/components/data-table";
 import getClassColumns from "@/features/classes/columns/classes.columns";
-import CrudListLayout from "@/components/CrudListLayout";
+import CrudListLayout from "@/layouts/CrudListLayout";
 
 export default function ClassesPage() {
   const { classes, loading, error, loadClasses, createClass, updateClass, deleteClass } = useClasses();

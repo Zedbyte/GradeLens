@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CreateSectionRequest, Section, UpdateSectionRequest } from "../features/sections/types/sections.types";
 import DataTable from "@/components/data-table";
 import getSectionColumns from "@/features/sections/columns/sections.columns";
-import CrudListLayout from "@/components/CrudListLayout";
+import CrudListLayout from "@/layouts/CrudListLayout";
 
 export function SectionsPage() {
   const { sections, loading, error, loadSections, createSection, updateSection, deleteSection } = useSections();

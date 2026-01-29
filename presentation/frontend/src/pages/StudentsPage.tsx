@@ -6,7 +6,7 @@ import { useSections } from "@/features/sections/hooks/useSections";
 import type { CreateStudentRequest, Student, UpdateStudentRequest } from "@/features/students/types/students.types";
 import DataTable from "@/components/data-table";
 import getStudentColumns from "@/features/students/columns/students.columns";
-import CrudListLayout from "@/components/CrudListLayout";
+import CrudListLayout from "@/layouts/CrudListLayout";
 
 export default function StudentsPage() {
   const { students, error, loadStudents, createStudent, updateStudent, deleteStudent } = useStudents();

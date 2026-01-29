@@ -6,7 +6,7 @@ import { ExamFormDialog } from "@/features/exams/components/ExamFormDialog";
 import type { CreateExamRequest, Exam, UpdateExamRequest } from "@/features/exams/types/exams.types";
 import DataTable from "@/components/data-table";
 import getExamColumns from "@/features/exams/columns/exams.columns";
-import CrudListLayout from "@/components/CrudListLayout";
+import CrudListLayout from "@/layouts/CrudListLayout";
 
 export default function ExamsPage() {
   const { exams, loading, error, loadExams, createExam, updateExam, deleteExam } = useExams();
