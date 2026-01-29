@@ -115,7 +115,7 @@ export default function ReportPage() {
             <div className="flex items-center justify-between">
                 <div>
                 <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                    Assessment Report
+                    Mean / PL / MPS
                 </h1>
                 <p className="mt-2 text-base text-muted-foreground">
                     Comprehensive analysis of student performance across all sections
