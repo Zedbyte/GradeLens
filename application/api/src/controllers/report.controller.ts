@@ -21,172 +21,245 @@ export class ReportController {
      * - grade_id: string (required)
      * - class_id: string (required)
      * - exam_id: string (required)
+     * - view: "section" | "overall" (optional, defaults to "section")
      */
     static async getPLEntries(req: Request, res: Response, next: NextFunction) {
         try {
-        const { grade_id, class_id, exam_id } = req.query;
+            const { grade_id, class_id, exam_id, view = "section" } = req.query;
 
-        // Validate required parameters
-        if (!grade_id || !class_id || !exam_id) {
-            return res.status(400).json({ 
-                error: "Missing required parameters: grade_id, class_id, exam_id" 
-            });
-        }
+            // Validate required parameters
+            if (!grade_id || !class_id || !exam_id) {
+                return res.status(400).json({ 
+                    error: "Missing required parameters: grade_id, class_id, exam_id" 
+                });
+            }
 
-        const classObjectId = new Types.ObjectId(class_id as string);
-        const examObjectId = new Types.ObjectId(exam_id as string);
+            // Validate view parameter
+            if (view !== "section" && view !== "overall") {
+                return res.status(400).json({ 
+                    error: "Invalid view parameter. Must be 'section' or 'overall'" 
+                });
+            }
 
-        // Fetch and validate class
-        const classDoc = await ClassModel.findById(classObjectId).lean();
-        if (!classDoc) {
-            return res.status(404).json({ error: "Class not found" });
-        }
+            const classObjectId = new Types.ObjectId(class_id as string);
+            const examObjectId = new Types.ObjectId(exam_id as string);
 
-        // Fetch and validate exam
-        const examDoc = await ExamModel.findById(examObjectId).lean();
-        if (!examDoc) {
-            return res.status(404).json({ error: "Exam not found" });
-        }
+            // Fetch and validate class
+            const classDoc = await ClassModel.findById(classObjectId).lean();
+            if (!classDoc) {
+                return res.status(404).json({ error: "Class not found" });
+            }
 
-        // Validate exam belongs to selected class (optional but recommended)
-        if (examDoc.class_id && !examDoc.class_id.equals(classObjectId)) {
-            return res.status(400).json({ 
-            error: "Selected exam does not belong to the selected class" 
-            });
-        }
+            // Fetch and validate exam
+            const examDoc = await ExamModel.findById(examObjectId).lean();
+            if (!examDoc) {
+                return res.status(404).json({ error: "Exam not found" });
+            }
 
-        // Get section_ids from class
-        const sectionIds = classDoc.section_ids || [];
-        if (sectionIds.length === 0) {
-            return res.json({ sections: [] });
-        }
+            // Validate exam belongs to selected class
+            if (examDoc.class_id && !examDoc.class_id.equals(classObjectId)) {
+                return res.status(400).json({ 
+                    error: "Selected exam does not belong to the selected class" 
+                });
+            }
 
-        // Fetch all sections
-        const sections = await SectionModel.find({
-            _id: { $in: sectionIds },
-            is_active: true
-        }).lean();
+            // Get section_ids from class
+            const sectionIds = classDoc.section_ids || [];
+            if (sectionIds.length === 0) {
+                return res.json({ 
+                    view,
+                    sections: [],
+                    overall: null 
+                });
+            }
 
-        if (sections.length === 0) {
-            return res.json({ sections: [] });
-        }
+            // Fetch all sections
+            const sections = await SectionModel.find({
+                _id: { $in: sectionIds },
+                is_active: true
+            }).lean();
 
-        // Get total points from exam
-        const totalPoints = examDoc.total_points || 0;
-        if (totalPoints === 0) {
-            return res.status(400).json({ 
-            error: "Exam has no total_points defined" 
-            });
-        }
+            if (sections.length === 0) {
+                return res.json({ 
+                    view,
+                    sections: [],
+                    overall: null 
+                });
+            }
 
-        // Process each section
-        const sectionResults = await Promise.all(
-            sections.map(async (section) => {
-            // We need students that truly belong to this section.
-            // Rule:
-            //  - Prefer students where `section_id === section._id`.
-            //  - If a student has no `section_id` but belongs to the class via `class_ids`, include them (unsectioned students attached to class).
-            //  - Do NOT include students from other sections just because they share the same class.
-            const studentQuery = {
-                $and: [
-                {
-                    $or: [
-                    { section_id: section._id },
-                    {
+            // Get total points from exam
+            const totalPoints = examDoc.total_points || 0;
+            if (totalPoints === 0) {
+                return res.status(400).json({ 
+                    error: "Exam has no total_points defined" 
+                });
+            }
+
+            // Process each section
+            const sectionResults = await Promise.all(
+                sections.map(async (section) => {
+                    const studentQuery = {
                         $and: [
-                        { section_id: { $exists: false } },
-                        { class_ids: classObjectId }
+                            {
+                                $or: [
+                                    { section_id: section._id },
+                                    {
+                                        $and: [
+                                            { section_id: { $exists: false } },
+                                            { class_ids: classObjectId }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                $or: [
+                                    { is_active: true },
+                                    { status: "active" }
+                                ]
+                            }
                         ]
+                    };
+
+                    const students = await StudentModel.find(studentQuery).lean();
+                    const studentIds = students.map((s) => s._id);
+
+                    // Edge case: no students in section
+                    if (studentIds.length === 0) {
+                        return {
+                            section_id: section._id.toString(),
+                            section_name: section.name || section.section_id || "Unnamed Section",
+                            statistics: {
+                                mean: 0,
+                                pl_percentage: 0,
+                                mps: 0,
+                                total_f: 0,
+                                total_fx: 0
+                            },
+                            distribution: [],
+                            metadata: {
+                                total_points: totalPoints,
+                                student_count: 0,
+                                scan_count: 0
+                            }
+                        };
                     }
-                    ]
-                },
-                {
-                    $or: [
-                    { is_active: true },
-                    { status: "active" }
-                    ]
-                }
-                ]
-            };
 
-            const students = await StudentModel.find(studentQuery).lean();
-            const studentIds = students.map((s) => s._id);
+                    // Fetch all graded scans
+                    const scans = await ScanModel.find({
+                        exam_id: examObjectId,
+                        student_id: { $in: studentIds },
+                        status: "graded",
+                        "grading_result.score.points_earned": { $exists: true, $type: "number" }
+                    }).lean();
 
-            // Edge case: no students in section
-            if (studentIds.length === 0) {
-                return {
-                section_id: section._id.toString(),
-                section_name: section.name || section.section_id || "Unnamed Section",
-                statistics: {
-                    mean: 0,
-                    pl_percentage: 0,
-                    mps: 0,
-                    total_f: 0,
-                    total_fx: 0
-                },
-                distribution: [],
-                metadata: {
-                    total_points: totalPoints,
-                    student_count: 0,
-                    scan_count: 0
+                    // Extract scores
+                    const scores: number[] = [];
+                    for (const scan of scans) {
+                        const pointsEarned = scan.grading_result?.score?.points_earned;
+                        if (typeof pointsEarned === "number" && !isNaN(pointsEarned)) {
+                            scores.push(pointsEarned);
+                        }
+                    }
+
+                    // Compute distribution across full range
+                    const distribution = computeDistribution(scores, totalPoints);
+
+                    // Calculate statistics
+                    const totalF = distribution.reduce((sum, row) => sum + row.f, 0);
+                    const totalFx = distribution.reduce((sum, row) => sum + row.fx, 0);
+                    const mean = totalF > 0 ? totalFx / totalF : 0;
+                    const pl = totalPoints > 0 ? (mean / totalPoints) * 100 : 0;
+                    const mps = (100 - pl) * 0.02 + pl;
+
+                    return {
+                        section_id: section._id.toString(),
+                        section_name: section.name || section.section_id || "Unnamed Section",
+                        statistics: {
+                            mean: parseFloat(mean.toFixed(2)),
+                            pl_percentage: parseFloat(pl.toFixed(2)),
+                            mps: parseFloat(mps.toFixed(2)),
+                            total_f: totalF,
+                            total_fx: totalFx
+                        },
+                        distribution: distribution.map((row) => ({
+                            score: row.score,
+                            f: row.f,
+                            fx: row.fx
+                        })),
+                        metadata: {
+                            total_points: totalPoints,
+                            student_count: studentIds.length,
+                            scan_count: scans.length
+                        }
+                    };
+                })
+            );
+
+            // Calculate overall statistics if view is "overall"
+            let overallData = null;
+            if (view === "overall") {
+                // Aggregate distribution across all sections
+                // Map: score -> { f: total frequency, fx: total f*x }
+                const overallDistributionMap = new Map<number, { f: number; fx: number }>();
+
+                // Initialize all scores from totalPoints down to 0
+                for (let score = totalPoints; score >= 0; score--) {
+                    overallDistributionMap.set(score, { f: 0, fx: 0 });
                 }
+
+                // Aggregate from all sections
+                let overallStudentCount = 0;
+                let overallScanCount = 0;
+
+                for (const section of sectionResults) {
+                    overallStudentCount += section.metadata.student_count;
+                    overallScanCount += section.metadata.scan_count;
+
+                    for (const distRow of section.distribution) {
+                        const current = overallDistributionMap.get(distRow.score);
+                        if (current) {
+                            current.f += distRow.f;
+                            current.fx += distRow.fx;
+                        }
+                    }
+                }
+
+                // Build overall distribution array
+                const overallDistribution = Array.from(overallDistributionMap.entries())
+                    .map(([score, { f, fx }]) => ({ score, f, fx }))
+                    .sort((a, b) => b.score - a.score); // Descending order
+
+                // Calculate overall statistics
+                const overallTotalF = overallDistribution.reduce((sum, row) => sum + row.f, 0);
+                const overallTotalFx = overallDistribution.reduce((sum, row) => sum + row.fx, 0);
+                const overallMean = overallTotalF > 0 ? overallTotalFx / overallTotalF : 0;
+                const overallPL = totalPoints > 0 ? (overallMean / totalPoints) * 100 : 0;
+                const overallMPS = (100 - overallPL) * 0.02 + overallPL;
+
+                overallData = {
+                    statistics: {
+                        mean: parseFloat(overallMean.toFixed(2)),
+                        pl_percentage: parseFloat(overallPL.toFixed(2)),
+                        mps: parseFloat(overallMPS.toFixed(2)),
+                        total_f: overallTotalF,
+                        total_fx: overallTotalFx
+                    },
+                    distribution: overallDistribution,
+                    metadata: {
+                        total_points: totalPoints,
+                        student_count: overallStudentCount,
+                        scan_count: overallScanCount
+                    }
                 };
             }
 
-            // Fetch all graded scans for this exam and these students
-            const scans = await ScanModel.find({
-                exam_id: examObjectId,
-                student_id: { $in: studentIds },
-                status: "graded",
-                "grading_result.score.points_earned": { $exists: true, $type: "number" }
-            }).lean();
-
-            // Extract scores
-            const scores: number[] = [];
-            for (const scan of scans) {
-                const pointsEarned = scan.grading_result?.score?.points_earned;
-                if (typeof pointsEarned === "number" && !isNaN(pointsEarned)) {
-                scores.push(pointsEarned);
-                }
-            }
-
-            // Compute distribution across full range 0..totalPoints
-            const distribution = computeDistribution(scores, totalPoints);
-
-            // Calculate statistics (only count non-zero frequencies)
-            const totalF = distribution.reduce((sum, row) => sum + row.f, 0);
-            const totalFx = distribution.reduce((sum, row) => sum + row.fx, 0);
-            const mean = totalF > 0 ? totalFx / totalF : 0;
-            const pl = totalPoints > 0 ? (mean / totalPoints) * 100 : 0;
-            const mps = (100 - pl) * 0.02 + pl;
-
-            return {
-                section_id: section._id.toString(),
-                section_name: section.name || section.section_id || "Unnamed Section",
-                statistics: {
-                mean: parseFloat(mean.toFixed(2)),
-                pl_percentage: parseFloat(pl.toFixed(2)),
-                mps: parseFloat(mps.toFixed(2)),
-                total_f: totalF,
-                total_fx: totalFx
-                },
-                distribution: distribution.map((row) => ({
-                score: row.score,
-                f: row.f,
-                fx: row.fx
-                })),
-                metadata: {
-                total_points: totalPoints,
-                student_count: studentIds.length,
-                scan_count: scans.length
-                }
-            };
-            })
-        );
-
-        res.json({ sections: sectionResults });
+            res.json({ 
+                view,
+                sections: sectionResults,
+                overall: overallData 
+            });
         } catch (error) {
-        next(error);
+            next(error);
         }
     }
 

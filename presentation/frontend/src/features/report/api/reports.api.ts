@@ -1,4 +1,4 @@
-// api/reports.api.ts
+// features/report/api/reports.api.ts
 import { api } from "@/api/axios";
 import type { 
   PLEntriesResponse, 
@@ -17,6 +17,7 @@ export const reportsApi = {
         grade_id: params.grade_id,
         class_id: params.class_id,
         exam_id: params.exam_id,
+        view: params.view || "section",
       },
     });
     return data;

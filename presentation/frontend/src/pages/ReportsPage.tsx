@@ -32,6 +32,7 @@ export default function ReportPage() {
     const [selectedClass, setSelectedClass] = useState<string>("");
     const [selectedExam, setSelectedExam] = useState<string>("");
     const [activeTab, setActiveTab] = useState<string>("pl-entries");
+    const [plView, setPlView] = useState<"section" | "overall">("section");
     const [itemView, setItemView] = useState<"section" | "overall">("section");
 
     const { grades, loadGrades } = useGrades();
@@ -67,6 +68,18 @@ export default function ReportPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemView]);
+
+    useEffect(() => {
+        if (plData && selectedGrade && selectedClass && selectedExam) {
+            loadPLEntries({
+                grade_id: selectedGrade,
+                class_id: selectedClass,
+                exam_id: selectedExam,
+                view: plView,
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [plView]);
 
     // Filter classes by selected grade
     const availableClasses = useMemo(() => {
@@ -114,6 +127,7 @@ export default function ReportPage() {
                 grade_id: selectedGrade,
                 class_id: selectedClass,
                 exam_id: selectedExam,
+                view: plView,
             }),
             loadItemEntries({
                 grade_id: selectedGrade,
@@ -280,8 +294,28 @@ export default function ReportPage() {
                 </TabsList>
 
                 <TabsContent value="pl-entries" className="mt-6">
+                {/* View Toggle */}
+                <div className="mb-4 flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">View:</span>
+                    <Button
+                        variant={plView === "section" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPlView("section")}
+                    >
+                        By Section
+                    </Button>
+                    <Button
+                        variant={plView === "overall" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPlView("overall")}
+                    >
+                        Overall
+                    </Button>
+                </div>
                 <PLEntries
                     sections={plData?.sections || []}
+                    overall={plData?.overall || null}
+                    view={plView}
                     isLoading={isLoadingReport && activeTab === "pl-entries"}
                     error={activeTab === "pl-entries" ? reportError : null}
                 />

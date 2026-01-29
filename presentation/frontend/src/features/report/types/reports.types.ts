@@ -3,12 +3,6 @@
 /**
  * PL Entries Types
  */
-export interface PLEntriesQueryParams {
-  grade_id: string;
-  class_id: string;
-  exam_id: string;
-}
-
 export interface PLEntriesDistributionRow {
   score: number;
   f: number;  // frequency
@@ -37,8 +31,23 @@ export interface PLEntriesSection {
   metadata: PLEntriesMetadata;
 }
 
+export interface IPLEntriesOverall {
+  statistics: PLEntriesStatistics;
+  distribution: PLEntriesDistributionRow[];
+  metadata: PLEntriesMetadata;
+}
+
 export interface PLEntriesResponse {
+  view: "section" | "overall";
   sections: PLEntriesSection[];
+  overall: IPLEntriesOverall | null;
+}
+
+export interface PLEntriesQueryParams {
+  grade_id: string;
+  class_id: string;
+  exam_id: string;
+  view?: "section" | "overall";
 }
 
 /**

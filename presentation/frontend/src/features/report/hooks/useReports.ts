@@ -13,6 +13,10 @@ export interface UseReportsParams {
   exam_id: string;
 }
 
+export interface UsePLEntriesParams extends UseReportsParams {
+  view?: "section" | "overall";
+}
+
 export interface UseItemEntriesParams extends UseReportsParams {
   view?: "section" | "overall";
 }
@@ -23,7 +27,7 @@ export function useReports() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPLEntries = useCallback(async (params: UseReportsParams) => {
+  const loadPLEntries = useCallback(async (params: UsePLEntriesParams) => {
     if (!params.grade_id || !params.class_id || !params.exam_id) {
       setError("Missing required parameters");
       return;
@@ -37,6 +41,7 @@ export function useReports() {
         grade_id: params.grade_id,
         class_id: params.class_id,
         exam_id: params.exam_id,
+        view: params.view || "section",
       });
       
       if (!response || !response.sections) {
