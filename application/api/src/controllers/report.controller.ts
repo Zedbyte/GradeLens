@@ -139,7 +139,10 @@ export class ReportController {
                             metadata: {
                                 total_points: totalPoints,
                                 student_count: 0,
-                                scan_count: 0
+                                scan_count: 0,
+                                number_of_items: examDoc.answers?.length || 0,
+                                hso: 0,
+                                lso: 0
                             }
                         };
                     }
@@ -171,6 +174,10 @@ export class ReportController {
                     const pl = totalPoints > 0 ? (mean / totalPoints) * 100 : 0;
                     const mps = (100 - pl) * 0.02 + pl;
 
+                    // Calculate HSO and LSO (for Summary)
+                    const hso = scores.length > 0 ? Math.max(...scores) : 0;
+                    const lso = scores.length > 0 ? Math.min(...scores) : 0;
+
                     return {
                         section_id: section._id.toString(),
                         section_name: section.name || section.section_id || "Unnamed Section",
@@ -189,7 +196,10 @@ export class ReportController {
                         metadata: {
                             total_points: totalPoints,
                             student_count: studentIds.length,
-                            scan_count: scans.length
+                            scan_count: scans.length,
+                            number_of_items: examDoc.answers?.length || 0,
+                            hso: hso,
+                            lso: lso
                         }
                     };
                 })
@@ -210,10 +220,18 @@ export class ReportController {
                 // Aggregate from all sections
                 let overallStudentCount = 0;
                 let overallScanCount = 0;
+                const allHSOs: number[] = [];
+                const allLSOs: number[] = [];
 
                 for (const section of sectionResults) {
                     overallStudentCount += section.metadata.student_count;
                     overallScanCount += section.metadata.scan_count;
+
+                    // Collect HSO and LSO from each section (skip sections with no scans)
+                    if (section.metadata.scan_count > 0) {
+                        allHSOs.push(section.metadata.hso);
+                        allLSOs.push(section.metadata.lso);
+                    }
 
                     for (const distRow of section.distribution) {
                         const current = overallDistributionMap.get(distRow.score);
@@ -236,6 +254,12 @@ export class ReportController {
                 const overallPL = totalPoints > 0 ? (overallMean / totalPoints) * 100 : 0;
                 const overallMPS = (100 - overallPL) * 0.02 + overallPL;
 
+                // Calculate overall HSO and LSO
+                // HSO is the maximum across all section HSOs
+                // LSO is the minimum across all section LSOs
+                const overallHSO = allHSOs.length > 0 ? Math.max(...allHSOs) : 0;
+                const overallLSO = allLSOs.length > 0 ? Math.min(...allLSOs) : 0;
+
                 overallData = {
                     statistics: {
                         mean: parseFloat(overallMean.toFixed(2)),
@@ -248,7 +272,10 @@ export class ReportController {
                     metadata: {
                         total_points: totalPoints,
                         student_count: overallStudentCount,
-                        scan_count: overallScanCount
+                        scan_count: overallScanCount,
+                        number_of_items: examDoc.answers?.length || 0,
+                        hso: overallHSO,
+                        lso: overallLSO
                     }
                 };
             }

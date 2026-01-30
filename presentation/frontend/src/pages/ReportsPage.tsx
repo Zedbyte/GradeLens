@@ -156,6 +156,10 @@ export default function ReportPage() {
         } else if (value === "item-entries" && !itemData) {
             await loadItemEntries(params);
         }
+        // Summary tab uses plData.sections, so ensure it's loaded
+        if (value === "summary" && !plData) {
+            await loadPLEntries(params);
+        }
     };
 
     return (
@@ -351,8 +355,9 @@ export default function ReportPage() {
 
                 <TabsContent value="summary" className="mt-6">
                 <SummaryEntries
-                    sectionIds={[]}
-                    classId={selectedClass}
+                    sections={plData?.sections || []}
+                    isLoading={isLoadingReport && activeTab === "summary"}
+                    error={activeTab === "summary" ? reportError : null}
                 />
                 </TabsContent>
             </Tabs>

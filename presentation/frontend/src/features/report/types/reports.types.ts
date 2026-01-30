@@ -21,6 +21,9 @@ export interface PLEntriesMetadata {
   total_points: number;
   student_count: number;
   scan_count: number;
+  number_of_items: number; // Total questions in exam
+  hso: number;            // Highest Score Obtained
+  lso: number;            // Lowest Score Obtained
 }
 
 export interface PLEntriesSection {
