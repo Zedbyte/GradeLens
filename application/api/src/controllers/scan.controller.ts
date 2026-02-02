@@ -41,6 +41,38 @@ export async function uploadScan(req: Request, res: Response) {
   }
 }
 
+/**
+ * Upload answer key scan (no exam_id or student_id required)
+ * Used for scanning answer keys before exam creation
+ */
+export async function uploadAnswerKeyScan(req: Request, res: Response) {
+  try {
+    const { image, template_id } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+    if (!template_id) {
+      return res.status(400).json({ error: "template_id is required" });
+    }
+
+    const scan_id = uuid();
+    const filename = `${scan_id}.jpg`;
+    const filePath = path.join(STORAGE_DIR, filename);
+
+    fs.writeFileSync(filePath, image, "base64");
+
+    const scan = await createScan(scan_id, filename, null, null, template_id);
+
+    res.status(202).json(scan);
+  } catch (error) {
+    console.error("Upload answer key scan error:", error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Failed to upload answer key scan" 
+    });
+  }
+}
+
 export async function getScans(req: Request, res: Response) {
   res.json(await listScans());
 }

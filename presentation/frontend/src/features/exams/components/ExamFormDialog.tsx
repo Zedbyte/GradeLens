@@ -14,8 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { IconPlus, IconTrash, IconScan, IconX, IconCheck } from "@tabler/icons-react";
+import { Loading } from "@/components/loading";
 import type { Exam } from "../types/exams.types";
+import { LiveScanner } from "@/features/scans/components/LiveScanner";
+import { useTemplate } from "@/hooks/useTemplate";
+import { uploadAnswerKeyScanApi } from "@/features/scans/api/scans.api";
+import { useScanPolling } from "@/features/scans/hooks/useScanPolling";
 
 const answerSchema = z.object({
   question_id: z.number().min(1, "Question ID must be positive"),
@@ -55,6 +61,8 @@ export function ExamFormDialog({
   classes = [],
 }: ExamFormDialogProps) {
   const [answers, setAnswers] = useState<Answer[]>([]);
+  const [isScanningAnswerKey, setIsScanningAnswerKey] = useState(false);
+  const [answerKeyScanId, setAnswerKeyScanId] = useState<string | undefined>();
   
   const {
     register,
@@ -73,6 +81,40 @@ export function ExamFormDialog({
   });
 
   const templateId = watch("template_id");
+  const { template } = useTemplate(templateId);
+
+  // Poll answer key scan
+  const { scan: answerKeyScan } = useScanPolling(
+    answerKeyScanId,
+    !!answerKeyScanId && isScanningAnswerKey
+  );
+
+  // Auto-populate answers when answer key scan completes
+  useEffect(() => {
+    if (!answerKeyScan || !isScanningAnswerKey) return;
+
+    // Check if scan has detection results
+    if (answerKeyScan.status === "detected" || answerKeyScan.status === "graded") {
+      const detections = answerKeyScan.detection_result?.detections;
+      if (detections && detections.length > 0) {
+        // Map detections to answers
+        const scannedAnswers: Answer[] = detections
+          .filter(d => d.selected && d.selected.length === 1) // Only answered questions
+          .map(d => ({
+            question_id: d.question_id,
+            correct: d.selected[0],
+            points: 1,
+          }));
+
+        if (scannedAnswers.length > 0) {
+          setAnswers(scannedAnswers);
+          setValue("answers", scannedAnswers);
+          setIsScanningAnswerKey(false);
+          setAnswerKeyScanId(undefined);
+        }
+      }
+    }
+  }, [answerKeyScan, isScanningAnswerKey, setValue]);
 
   // Generate answer key based on template
   const generateAnswerKey = (template: string) => {
@@ -164,6 +206,30 @@ export function ExamFormDialog({
     setValue("answers", newAnswers);
   };
 
+  const handleAnswerKeyCapture = async (imageData: string) => {
+    try {
+      if (!templateId) {
+        console.error("No template selected");
+        setIsScanningAnswerKey(false);
+        return;
+      }
+
+      // Upload the answer key scan with template_id
+      const response = await uploadAnswerKeyScanApi(imageData, templateId);
+
+      // Start polling this scan
+      setAnswerKeyScanId(response.scan_id);
+    } catch (error) {
+      console.error("Failed to upload answer key:", error);
+      setIsScanningAnswerKey(false);
+    }
+  };
+
+  const cancelAnswerKeyScanning = () => {
+    setIsScanningAnswerKey(false);
+    setAnswerKeyScanId(undefined);
+  };
+
   const onSubmitForm: SubmitHandler<ExamFormData> = async (data) => {
     const success = await onSubmit(data);
     if (success) {
@@ -175,7 +241,7 @@ export function ExamFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-175">
+      <DialogContent className="max-h-[90vh] overflow-y-auto min-w-[95vw] lg:min-w-350">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Create Exam" : "Edit Exam"}</DialogTitle>
           <DialogDescription>
@@ -186,6 +252,9 @@ export function ExamFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column: Exam Details */}
+          <div className="space-y-4">
           {/* Exam ID is auto-generated on the backend; no input required */}
 
           <div className="space-y-2">
@@ -291,108 +360,188 @@ export function ExamFormDialog({
                   {...register("due_date")}
                 />
               </div>
+              </div>
             </div>
           </div>
 
-          {/* Answer Key Section */}
-          <div className="space-y-4 rounded-lg border p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-medium">Answer Key</h4>
-                <span className="text-destructive">*</span>
-                <Badge variant="secondary">{answers.length} questions</Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateAnswerKey(templateId || "form_A")}
-                >
-                  Generate Template
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addAnswer}
-                >
-                  <IconPlus className="h-4 w-4" />
-                  Add Question
-                </Button>
-              </div>
+            {/* Right Column: Answer Key / Scanner */}
+            <div className="space-y-4">
+              {!isScanningAnswerKey ? (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Answer Key</CardTitle>
+                        <CardDescription>
+                          Enter correct answers manually or scan an answer sheet
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        {template && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsScanningAnswerKey(true)}
+                          >
+                            <IconScan className="mr-2 h-4 w-4" />
+                            Scan Answer Key
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => generateAnswerKey(templateId || "form_A")}
+                        >
+                          <IconPlus className="mr-2 h-4 w-4" />
+                          Generate from Template
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary">{answers.length} questions</Badge>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addAnswer}
+                        >
+                          <IconPlus className="h-4 w-4" />
+                          Add Question
+                        </Button>
+                      </div>
+
+                      {errors.answers && (
+                        <p className="text-sm text-destructive">
+                          {errors.answers.message || "Answer key is required"}
+                        </p>
+                      )}
+
+                      {answers.length > 0 ? (
+                        <div className="max-h-[400px] space-y-2 overflow-y-auto">
+                          <div className="grid grid-cols-[80px_1fr_80px_60px] gap-2 text-sm font-medium text-muted-foreground">
+                            <div>Question</div>
+                            <div>Correct Answer</div>
+                            <div>Points</div>
+                            <div></div>
+                          </div>
+                          {answers.map((answer, index) => (
+                            <div
+                              key={index}
+                              className="grid grid-cols-[80px_1fr_80px_60px] gap-2 items-center"
+                            >
+                              <Input
+                                type="number"
+                                min="1"
+                                value={answer.question_id}
+                                onChange={(e) =>
+                                  updateAnswer(index, "question_id", e.target.value)
+                                }
+                                className="h-8"
+                              />
+                              <select
+                                value={answer.correct}
+                                onChange={(e) =>
+                                  updateAnswer(index, "correct", e.target.value)
+                                }
+                                className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                              >
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                              </select>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                value={answer.points}
+                                onChange={(e) =>
+                                  updateAnswer(index, "points", e.target.value)
+                                }
+                                className="h-8"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeAnswer(index)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <IconTrash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                          No answer key defined. Click "Generate from Template" or "Add Question" to add manually.
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Scan Answer Key</CardTitle>
+                        <CardDescription>
+                          {answerKeyScan?.status === "processing" || answerKeyScan?.status === "queued" ? (
+                            <span className="text-blue-600 font-medium">
+                              Processing... Detecting answers from scan
+                            </span>
+                          ) : answerKeyScan?.status === "detected" || answerKeyScan?.status === "graded" ? (
+                            <span className="text-green-600 font-medium flex items-center gap-1">
+                              <IconCheck className="h-4 w-4" />
+                              Scan complete! Answers populated
+                            </span>
+                          ) : (
+                            "Position the answer sheet in the camera viewfinder"
+                          )}
+                        </CardDescription>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={cancelAnswerKeyScanning}
+                      >
+                        <IconX className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {(answerKeyScan?.status === "queued" || answerKeyScan?.status === "processing") ? (
+                      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                        <Loading text="Processing scan..." />
+                        <p className="text-sm text-muted-foreground text-center">
+                          Detecting answers from the scanned answer key.
+                          <br />
+                          This usually takes a few seconds.
+                        </p>
+                      </div>
+                    ) : (
+                      template && (
+                        <LiveScanner
+                          selectedExam="answer-key-scan"
+                          selectedStudent="answer-key"
+                          template={template}
+                          onCapture={handleAnswerKeyCapture}
+                        />
+                      )
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
-
-            {errors.answers && (
-              <p className="text-sm text-destructive">
-                {errors.answers.message || "Answer key is required"}
-              </p>
-            )}
-
-            {answers.length > 0 ? (
-              <div className="max-h-[300px] space-y-2 overflow-y-auto">
-                <div className="grid grid-cols-[80px_1fr_80px_60px] gap-2 text-sm font-medium text-muted-foreground">
-                  <div>Question</div>
-                  <div>Correct Answer</div>
-                  <div>Points</div>
-                  <div></div>
-                </div>
-                {answers.map((answer, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-[80px_1fr_80px_60px] gap-2 items-center"
-                  >
-                    <Input
-                      type="number"
-                      min="1"
-                      value={answer.question_id}
-                      onChange={(e) =>
-                        updateAnswer(index, "question_id", e.target.value)
-                      }
-                      className="h-8"
-                    />
-                    <select
-                      value={answer.correct}
-                      onChange={(e) =>
-                        updateAnswer(index, "correct", e.target.value)
-                      }
-                      className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                      <option value="D">D</option>
-                      <option value="E">E</option>
-                    </select>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={answer.points}
-                      onChange={(e) =>
-                        updateAnswer(index, "points", e.target.value)
-                      }
-                      className="h-8"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeAnswer(index)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                No answer key defined. Click "Generate Template" to create a template or "Add
-                Question" to add manually.
-              </div>
-            )}
-          </div>
+            </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

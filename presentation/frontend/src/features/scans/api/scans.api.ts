@@ -18,6 +18,17 @@ export const uploadScanApi = async (
   return data;
 };
 
+export const uploadAnswerKeyScanApi = async (
+  image: string,
+  template_id: string
+): Promise<UploadScanResponse> => {
+  const { data } = await api.post<UploadScanResponse>("/scans/answer-key", {
+    image,
+    template_id,
+  });
+  return data;
+};
+
 export const fetchScansApi = async (): Promise<Scan[]> => {
   const { data } = await api.get<Scan[]>("/scans");
   return data;

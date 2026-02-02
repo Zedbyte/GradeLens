@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   uploadScan,
+  uploadAnswerKeyScan,
   getScans,
   getScanById,
   updateScanAnswersController,
@@ -15,6 +16,7 @@ const router = Router();
 router.use(authenticate);
 
 router.post(API_ROUTES.SCANS.BASE, uploadScan);
+router.post(`${API_ROUTES.SCANS.BASE}/answer-key`, uploadAnswerKeyScan);
 router.get(API_ROUTES.SCANS.BASE, getScans);
 router.get(`${API_ROUTES.SCANS.BASE}/:scan_id`, getScanById);
 router.patch(`${API_ROUTES.SCANS.BASE}/:scan_id/answers`, updateScanAnswersController);

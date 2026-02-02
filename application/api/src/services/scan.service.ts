@@ -8,33 +8,45 @@ import { QuestionDetection } from "@packages/types/scans/scans.types.ts";
 export async function createScan(
   scan_id: string,
   filename: string,
-  exam_id: string,
-  student_id: string
+  exam_id: string | null,
+  student_id: string | null,
+  template_id?: string
 ) {
-  // Lookup the exam to get the template_id
-  const exam = await ExamModel.findById(exam_id);
-  if (!exam) {
-    throw new Error(`Exam not found: ${exam_id}`);
+  let actualTemplateId = template_id;
+
+  // If exam_id provided, lookup the template_id from exam
+  if (exam_id) {
+    const exam = await ExamModel.findById(exam_id);
+    if (!exam) {
+      throw new Error(`Exam not found: ${exam_id}`);
+    }
+
+    if (!exam.template_id) {
+      throw new Error(`Exam ${exam_id} does not have a template_id`);
+    }
+
+    actualTemplateId = exam.template_id;
   }
 
-  if (!exam.template_id) {
-    throw new Error(`Exam ${exam_id} does not have a template_id`);
+  // template_id is required either from exam or parameter
+  if (!actualTemplateId) {
+    throw new Error("Template is required (either from exam or parameter)");
   }
 
   const scan = await ScanModel.create({
     scan_id,
     filename,
     status: "queued",
-    exam_id: new Types.ObjectId(exam_id),
-    student_id: new Types.ObjectId(student_id),
-    template_id: exam.template_id,
+    exam_id: exam_id ? new Types.ObjectId(exam_id) : undefined,
+    student_id: student_id ? new Types.ObjectId(student_id) : undefined,
+    template_id: actualTemplateId,
     processing_started_at: new Date()
   });
 
   await enqueueScan({
     scan_id,
     image_path: filename,
-    template: exam.template_id  // Use actual template from exam
+    template: actualTemplateId
   });
 
   return scan;
