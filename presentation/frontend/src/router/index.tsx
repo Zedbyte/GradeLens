@@ -12,6 +12,7 @@ import { PublicRoute } from "./guards/PublicRoute";
 import { AppLayout } from "@/layouts/AppLayout";
 import { ROUTES } from "@/lib/constants";
 import { ScanPage } from "@/pages/ScanPage";
+import AccountsPage from "@/pages/AccountsPage";
 
 export function AppRouter() {
     return (
@@ -109,6 +110,17 @@ export function AppRouter() {
                 <ProtectedRoute>
                 <AppLayout>
                     <SectionsPage />
+                </AppLayout>
+                </ProtectedRoute>
+            }
+            />
+
+            <Route
+            path={ROUTES.ACCOUNTS}
+            element={
+                <ProtectedRoute>
+                <AppLayout>
+                    <AccountsPage />
                 </AppLayout>
                 </ProtectedRoute>
             }

@@ -8,6 +8,7 @@ export const ROUTES = {
   GRADES: "/grades",
   SECTIONS: "/sections",
   REPORTS: "/reports",
+  ACCOUNTS: "/accounts",
 } as const;
 
 export const QUERY_KEYS = {
