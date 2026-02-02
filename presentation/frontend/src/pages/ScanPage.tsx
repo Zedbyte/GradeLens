@@ -102,16 +102,25 @@ export function ScanPage() {
     return true;
   });
 
-  // Filter students by selected grade/section/class
+  // Find selected exam details
+  const examDetails = exams.find(q => q._id === selectedExam);
+
+  // Filter students by selected grade/section/class and exam's class
   const filteredStudents = students.filter(s => {
     if (selectedGrade && s.grade_id !== selectedGrade) return false;
     if (selectedSection && s.section_id !== selectedSection) return false;
     if (selectedClass && !s.class_ids?.includes(selectedClass)) return false;
+    
+    // If exam is selected, only show students from that exam's class
+    if (selectedExam && examDetails?.class_id) {
+      const examClassId = typeof examDetails.class_id === 'string' 
+        ? examDetails.class_id 
+        : extractId(examDetails.class_id);
+      if (examClassId && !s.class_ids?.includes(examClassId)) return false;
+    }
+    
     return true;
   });
-
-  // Find selected exam details
-  const examDetails = exams.find(q => q._id === selectedExam);
 
   const handleSaveScan = async () => {
     // Refresh scans - the store will handle refreshing selected scan automatically
