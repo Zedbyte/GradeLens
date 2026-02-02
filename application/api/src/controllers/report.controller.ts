@@ -419,21 +419,25 @@ export class ReportController {
                     section_name: pl.section_name,
                     students_took_exam:
                         itemSections[idx]?.metadata.students_took_exam || 0,
+                    number_of_items: totalQuestions,
+                    hso: pl.metadata.hso,
+                    lso: pl.metadata.lso,
+                    total_scores: pl.statistics.total_fx,
                     total_students: itemSections[idx]?.metadata.total_students || 0,
                     mean: pl.statistics.mean,
                     pl: pl.statistics.pl_percentage,
                     mps: pl.statistics.mps,
-                    hso: pl.metadata.hso,
-                    lso: pl.metadata.lso,
                 })),
                 overall: {
                     total_students_took_exam:
                         overallMetadata.total_students_took_exam,
+                    number_of_items: totalQuestions,
+                    hso: overallPLData.metadata?.hso || 0,
+                    lso: overallPLData.metadata?.lso || 0,
+                    total_scores: overallPLData.stats.total_fx,
                     mean: overallPLData.stats.mean,
                     pl: overallPLData.stats.pl,
                     mps: overallPLData.stats.mps,
-                    hso: overallPLData.metadata?.hso || 0,
-                    lso: overallPLData.metadata?.lso || 0,
                 },
             };
 

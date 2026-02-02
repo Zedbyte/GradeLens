@@ -369,13 +369,15 @@ export class ExportService {
     // Headers
     const headers = [
       "Section",
-      "Students Took Exam",
+      "Number of Examinees",
+      "No of Items",
+      "HSO",
+      "LSO",
+      "Total Scores of Examinees",
       "Total Students",
       "Mean",
       "PL",
       "MPS",
-      "HSO",
-      "LSO",
     ];
     sheet.addRow(headers);
     sheet.getRow(1).font = { bold: true };
@@ -390,12 +392,14 @@ export class ExportService {
       sheet.addRow([
         section.section_name,
         section.students_took_exam,
+        section.number_of_items,
+        section.hso.toFixed(2),
+        section.lso.toFixed(2),
+        section.total_scores,
         section.total_students,
         section.mean.toFixed(2),
         section.pl.toFixed(2),
         section.mps.toFixed(2),
-        section.hso.toFixed(2),
-        section.lso.toFixed(2),
       ]);
     }
 
@@ -404,12 +408,14 @@ export class ExportService {
       const overallRow = [
         "OVERALL",
         summaryData.overall.total_students_took_exam,
+        summaryData.overall.number_of_items,
+        summaryData.overall.hso.toFixed(2),
+        summaryData.overall.lso.toFixed(2),
+        summaryData.overall.total_scores,
         "",
         summaryData.overall.mean.toFixed(2),
         summaryData.overall.pl.toFixed(2),
         summaryData.overall.mps.toFixed(2),
-        summaryData.overall.hso.toFixed(2),
-        summaryData.overall.lso.toFixed(2),
       ];
       sheet.addRow(overallRow);
       sheet.getRow(sheet.rowCount).font = { bold: true };

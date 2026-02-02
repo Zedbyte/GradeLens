@@ -81,20 +81,24 @@ export interface SummaryData {
     section_id: string;
     section_name: string;
     students_took_exam: number;
+    number_of_items: number;
+    hso: number;
+    lso: number;
+    total_scores: number;
     total_students: number;
     mean: number;
     pl: number;
     mps: number;
-    hso: number;
-    lso: number;
   }>;
   overall?: {
     total_students_took_exam: number;
+    number_of_items: number;
+    hso: number;
+    lso: number;
+    total_scores: number;
     mean: number;
     pl: number;
     mps: number;
-    hso: number;
-    lso: number;
   };
 }
 
