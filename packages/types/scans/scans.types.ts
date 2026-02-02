@@ -6,6 +6,7 @@ export type ScanStatus =
   | "graded"
   | "needs_review"
   | "reviewed"
+  | "outdated"
   | "failed"
   | "error";
 
@@ -169,6 +170,7 @@ export interface UploadScanRequest {
   image: string; // base64
   exam_id: string;      // Exam/Exam ID
   student_id: string;   // Student ID
+  redo_existing?: boolean; // Whether to update existing scan or mark as outdated
 }
 
 export interface UploadScanResponse {

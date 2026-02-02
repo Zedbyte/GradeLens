@@ -10,7 +10,8 @@ export async function createScan(
   filename: string,
   exam_id: string | null,
   student_id: string | null,
-  template_id?: string
+  template_id?: string,
+  redo_existing?: boolean
 ) {
   let actualTemplateId = template_id;
 
@@ -31,6 +32,87 @@ export async function createScan(
   // template_id is required either from exam or parameter
   if (!actualTemplateId) {
     throw new Error("Template is required (either from exam or parameter)");
+  }
+
+  // Handle duplicate scans for the same exam + student
+  if (exam_id && student_id) {
+    const existingScans = await ScanModel.find({
+      exam_id: new Types.ObjectId(exam_id),
+      student_id: new Types.ObjectId(student_id),
+      status: { $nin: ["outdated", "failed", "error"] }
+    });
+
+    if (existingScans.length > 0) {
+      if (redo_existing) {
+        // Update the most recent scan, mark all others as outdated
+        const existingScan = existingScans[0];
+        
+        // Mark all OTHER existing scans as outdated (if there are multiple)
+        if (existingScans.length > 1) {
+          const otherScanIds = existingScans.slice(1).map(s => s._id);
+          await ScanModel.updateMany(
+            { _id: { $in: otherScanIds } },
+            {
+              $set: { status: "outdated" },
+              $push: {
+                logs: {
+                  timestamp: new Date(),
+                  level: "info",
+                  message: "Marked as outdated - multiple duplicates found, keeping most recent",
+                  data: { new_scan_id: scan_id }
+                }
+              }
+            }
+          );
+        }
+
+        // Update the most recent scan with new image
+        existingScan.status = "queued";
+        existingScan.filename = filename;
+        existingScan.scan_id = scan_id; // Use new scan_id
+        existingScan.processing_started_at = new Date();
+        existingScan.detection_result = null;
+        existingScan.grading_result = null;
+        existingScan.error_message = undefined;
+        existingScan.logs.push({
+          timestamp: new Date(),
+          level: "info",
+          message: "Scan redone - replaced with new image",
+          data: { old_scan_id: existingScan.scan_id, new_scan_id: scan_id }
+        });
+        
+        await existingScan.save();
+
+        // Enqueue the updated scan
+        await enqueueScan({
+          scan_id,
+          image_path: filename,
+          template: actualTemplateId
+        });
+
+        return existingScan;
+      } else {
+        // Mark ALL existing scans as outdated
+        await ScanModel.updateMany(
+          {
+            exam_id: new Types.ObjectId(exam_id),
+            student_id: new Types.ObjectId(student_id),
+            status: { $nin: ["outdated", "failed", "error"] }
+          },
+          {
+            $set: { status: "outdated" },
+            $push: {
+              logs: {
+                timestamp: new Date(),
+                level: "info",
+                message: "Marked as outdated - superseded by new scan",
+                data: { new_scan_id: scan_id }
+              }
+            }
+          }
+        );
+      }
+    }
   }
 
   const scan = await ScanModel.create({

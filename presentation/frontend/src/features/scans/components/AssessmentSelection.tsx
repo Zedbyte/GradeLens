@@ -12,6 +12,7 @@ interface AssessmentSelectionProps {
   onExamChange: (value: string) => void;
   onStudentChange: (value: string) => void;
   examDetails?: Exam;
+  hasDuplicate?: boolean;
 }
 
 export function AssessmentSelection({
@@ -22,6 +23,7 @@ export function AssessmentSelection({
   onExamChange,
   onStudentChange,
   examDetails,
+  hasDuplicate,
 }: AssessmentSelectionProps) {
   return (
     <div className="flex flex-wrap items-end gap-4">
@@ -71,6 +73,11 @@ export function AssessmentSelection({
             <Badge variant="outline" className="text-xs">
               {examDetails.total_points || 0} points
             </Badge>
+            {hasDuplicate && (
+              <Badge variant="destructive" className="text-xs">
+                Duplicate
+              </Badge>
+            )}
           </div>
         </div>
       )}

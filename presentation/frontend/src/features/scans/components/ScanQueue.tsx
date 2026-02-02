@@ -45,19 +45,22 @@ export function ScanQueue({
               className={`w-full text-left p-3 rounded-lg text-xs transition-all border ${
                 selectedScanId === scan.scan_id
                   ? 'bg-primary/5 border-primary/50'
+                  : scan.status === 'outdated'
+                  ? 'bg-muted/50 border-border/50 opacity-60'
                   : 'bg-background border-border hover:bg-secondary/40'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate text-foreground">
+                  <p className={`font-medium truncate ${scan.status === 'outdated' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                     {student ? `${student.first_name} ${student.last_name}` : 'Unknown Student'}
                   </p>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">
                     {exam?.name || 'Unknown Exam'}
+                    {scan.status === 'outdated' && <span className="ml-1 text-orange-600 font-medium">(Outdated)</span>}
                   </p>
                 </div>
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   {scan.status === 'graded' && <IconCheck className="h-4 w-4 text-green-500" />}
                   {scan.status === 'processing' && (
                     <IconClock className="h-4 w-4 animate-pulse text-primary" />
@@ -65,6 +68,9 @@ export function ScanQueue({
                   {scan.status === 'failed' && <IconAlertCircle className="h-4 w-4 text-destructive" />}
                   {scan.status === 'queued' && (
                     <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                  )}
+                  {scan.status === 'outdated' && (
+                    <div className="h-2 w-2 rounded-full bg-orange-500" />
                   )}
                 </div>
               </div>

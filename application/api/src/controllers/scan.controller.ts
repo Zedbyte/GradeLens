@@ -12,7 +12,7 @@ if (!fs.existsSync(STORAGE_DIR)) {
 
 export async function uploadScan(req: Request, res: Response) {
   try {
-    const { image, exam_id, student_id } = req.body;
+    const { image, exam_id, student_id, redo_existing } = req.body;
 
     if (!image) {
       return res.status(400).json({ error: "Image is required" });
@@ -30,7 +30,7 @@ export async function uploadScan(req: Request, res: Response) {
 
     fs.writeFileSync(filePath, image, "base64");
 
-    const scan = await createScan(scan_id, filename, exam_id, student_id);
+    const scan = await createScan(scan_id, filename, exam_id, student_id, undefined, redo_existing);
 
     res.status(202).json(scan);
   } catch (error) {

@@ -9,9 +9,10 @@ interface UploadFormProps {
   onUploaded: (scanId: string) => void;
   selectedExam?: string;
   selectedStudent?: string;
+  redoExisting?: boolean;
 }
 
-export function UploadForm({ onUploaded, selectedExam, selectedStudent }: UploadFormProps) {
+export function UploadForm({ onUploaded, selectedExam, selectedStudent, redoExisting }: UploadFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -27,7 +28,8 @@ export function UploadForm({ onUploaded, selectedExam, selectedStudent }: Upload
         const response = await uploadScanApi({
           image: base64,
           exam_id: selectedExam,
-          student_id: selectedStudent
+          student_id: selectedStudent,
+          redo_existing: redoExisting
         })
         setFile(null)
         setLoading(false)

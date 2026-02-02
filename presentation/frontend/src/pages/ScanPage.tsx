@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IconCamera, IconUpload, IconEdit } from "@tabler/icons-react";
+import { IconCamera, IconUpload, IconEdit, IconAlertTriangle } from "@tabler/icons-react";
 import { useGrades } from "@/features/grades/hooks/useGrades";
 import { useSections } from "@/features/sections/hooks/useSections";
 import { useClasses } from "@/features/classes/hooks/useClasses";
@@ -10,6 +10,7 @@ import { useExams } from "@/features/exams/hooks/useExams";
 import { useStudents } from "@/features/students/hooks/useStudents";
 import { useTemplate } from "@/hooks/useTemplate";
 import { useScans } from "../features/scans/hooks/useScans";
+import { useDuplicateScan } from "../features/scans/hooks/useDuplicateScan";
 import { UploadForm } from "../features/scans/components/UploadForm";
 import { LiveScanner } from "../features/scans/components/LiveScanner";
 import { ScanFilters } from "../features/scans/components/ScanFilters";
@@ -29,6 +30,7 @@ export function ScanPage() {
   const [selectedExam, setSelectedExam] = useState<string>("");
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("upload");
+  const [redoExisting, setRedoExisting] = useState<boolean>(false);
 
   // Use Zustand store for scans
   const { 
@@ -39,6 +41,13 @@ export function ScanPage() {
     selectScan,
     uploadScan 
   } = useScans();
+
+  // Detect duplicate scans
+  const { hasDuplicate, existingScan } = useDuplicateScan({
+    scans,
+    selectedExam,
+    selectedStudent,
+  });
 
   // Load data
   const { grades, loadGrades } = useGrades();
@@ -150,6 +159,7 @@ export function ScanPage() {
         image: imageData,
         exam_id: selectedExam,
         student_id: selectedStudent,
+        redo_existing: redoExisting,
       });
 
       // Select the newly uploaded scan (will trigger polling)
@@ -157,6 +167,9 @@ export function ScanPage() {
       
       // Switch to upload tab to show the queue
       setActiveTab("upload");
+
+      // Reset redo flag after upload
+      setRedoExisting(false);
     } catch (error) {
       console.error("Failed to upload scan:", error);
     }
@@ -201,7 +214,49 @@ export function ScanPage() {
         onExamChange={setSelectedExam}
         onStudentChange={setSelectedStudent}
         examDetails={examDetails}
+        hasDuplicate={hasDuplicate}
       />
+
+      {/* Duplicate Scan Warning */}
+      {hasDuplicate && existingScan && (
+        <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-950/20">
+          <CardContent>
+            <div className="flex items-start gap-4">
+              <IconAlertTriangle className="h-6 w-6 text-orange-600 shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h4 className="font-semibold text-orange-900 dark:text-orange-100">
+                    Duplicate Scan Detected
+                  </h4>
+                  <p className="text-sm text-orange-800 dark:text-orange-200 mt-1">
+                    A scan already exists for this exam and student combination (Status is <span className="font-medium">{existingScan.status}</span>).
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 pl-1">
+                  <input
+                    type="checkbox"
+                    id="redo-existing"
+                    checked={redoExisting}
+                    onChange={(e) => setRedoExisting(e.target.checked)}
+                    className="h-4 w-4 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                  />
+                  <label
+                    htmlFor="redo-existing"
+                    className="text-sm font-medium text-orange-900 dark:text-orange-100 cursor-pointer"
+                  >
+                    Update existing scan (replace with new image)
+                  </label>
+                </div>
+                <p className="text-xs text-orange-700 dark:text-orange-300 pl-1">
+                  {redoExisting 
+                    ? "✓ The existing scan will be updated with the new image and re-processed."
+                    : "⚠ The existing scan will be marked as 'outdated' and a new scan will be created."}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Scan Input Row */}
       <Card>
@@ -240,9 +295,11 @@ export function ScanPage() {
                 onUploaded={(scanId) => {
                   loadScans();
                   selectScan(scanId);
+                  setRedoExisting(false); // Reset after upload
                 }}
                 selectedExam={selectedExam}
                 selectedStudent={selectedStudent}
+                redoExisting={redoExisting}
               />
             </TabsContent>
 

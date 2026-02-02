@@ -20,6 +20,7 @@ export type ScanStatus =
   | "graded"        // Grading complete, results available
   | "needs_review"  // Requires manual review
   | "reviewed"      // Manual review completed
+  | "outdated"      // Superseded by a newer scan
   | "failed"        // Processing failed
   | "error";        // Unrecoverable error
 
@@ -76,6 +77,7 @@ const ScanSchema = new Schema(
         "graded",
         "needs_review",
         "reviewed",
+        "outdated",
         "failed",
         "error"
       ],
