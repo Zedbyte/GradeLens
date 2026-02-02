@@ -24,6 +24,7 @@ import {
   IconChartBar,
   IconClipboardList,
   IconGauge,
+  IconDownload,
 } from "@tabler/icons-react";
 import { extractId } from "@/lib/extractId";
 
@@ -34,6 +35,7 @@ export default function ReportPage() {
     const [activeTab, setActiveTab] = useState<string>("pl-entries");
     const [plView, setPlView] = useState<"section" | "overall">("section");
     const [itemView, setItemView] = useState<"section" | "overall">("section");
+    const [isExporting, setIsExporting] = useState(false);
 
     const { grades, loadGrades } = useGrades();
     const { classes, loadClasses } = useClasses();
@@ -45,6 +47,7 @@ export default function ReportPage() {
       error: reportError, 
       loadPLEntries,
       loadItemEntries,
+      exportReport,
       reset 
     } = useReports();
 
@@ -259,13 +262,36 @@ export default function ReportPage() {
                     </div>
                     </div>
 
-                    <div className="flex flex-1 items-end">
+                    <div className="flex flex-1 items-end gap-2">
                     <Button
                         disabled={!isReady || isLoadingReport}
                         onClick={handleGenerateReport}
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         {isLoadingReport ? "Generating..." : "Generate Report"}
+                    </Button>
+                    
+                    <Button
+                        disabled={!plData || isExporting}
+                        onClick={async () => {
+                          setIsExporting(true);
+                          try {
+                            await exportReport({
+                              grade_id: selectedGrade,
+                              class_id: selectedClass,
+                              exam_id: selectedExam,
+                            });
+                          } catch (error) {
+                            console.error("Export failed:", error);
+                          } finally {
+                            setIsExporting(false);
+                          }
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                    >
+                        <IconDownload className="w-4 h-4" />
+                        {isExporting ? "Exporting..." : "Export"}
                     </Button>
                     </div>
                 </div>

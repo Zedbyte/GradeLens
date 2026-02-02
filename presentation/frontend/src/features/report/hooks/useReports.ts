@@ -94,6 +94,30 @@ export function useReports() {
     setLoading(false);
   }, []);
 
+  const exportReport = useCallback(async (params: UseReportsParams) => {
+    if (!params.grade_id || !params.class_id || !params.exam_id) {
+      setError("Missing required parameters");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await reportsApi.exportReport({
+        grade_id: params.grade_id,
+        class_id: params.class_id,
+        exam_id: params.exam_id,
+      });
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || "Failed to export report");
+      console.error("Failed to export report:", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     plData,
     itemData,
@@ -101,6 +125,7 @@ export function useReports() {
     error,
     loadPLEntries,
     loadItemEntries,
+    exportReport,
     reset,
   };
 }
