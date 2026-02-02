@@ -224,7 +224,15 @@ export const useScansStore = create<ScansState>((set, get) => ({
         return;
       }
 
+      // Update selectedScan
       set({ selectedScan: scan });
+
+      // Also update the scan in the scans array to keep the queue in sync
+      set((state) => ({
+        scans: state.scans.map((s) => 
+          s.scan_id === scan.scan_id ? scan : s
+        )
+      }));
 
       // Stop polling if terminal status reached
       if (isTerminalStatus(scan.status)) {
