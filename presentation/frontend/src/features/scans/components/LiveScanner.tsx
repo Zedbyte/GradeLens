@@ -496,6 +496,7 @@ export function LiveScanner({
       {/* Controls */}
       <div className="flex gap-2  max-w-md mx-auto">
         <Button
+          type="button"
           onClick={handleCapture}
           disabled={!canCapture}
           className="flex-1"
@@ -506,6 +507,7 @@ export function LiveScanner({
         </Button>
         
         <Button
+          type="button"
           onClick={() => {
             setError("");
             setIsReady(false);
@@ -537,6 +539,7 @@ export function LiveScanner({
                 size="sm"
                 onClick={() => setShowDebugImages(!showDebugImages)}
                 className="w-full"
+                type="button"
               >
                 {showDebugImages ? "Hide" : "Show"} Preprocessing Images
               </Button>
