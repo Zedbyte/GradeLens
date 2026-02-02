@@ -8,6 +8,7 @@ import examRoutes from "./exams.ts";
 import gradeRoutes from "./grades.ts";
 import sectionRoutes from "./sections.ts";
 import reportRoutes from "./reports.ts";
+import accountRoutes from "./accounts.ts"
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use(examRoutes);
 router.use(gradeRoutes);
 router.use(sectionRoutes);
 router.use(reportRoutes);
+router.use(accountRoutes);
 
 export default router;

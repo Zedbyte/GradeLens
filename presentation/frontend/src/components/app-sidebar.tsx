@@ -75,7 +75,7 @@ const navMain = [
   },
   {
     title: "Accounts", //Create accounts, and students.
-    url: '#',
+    url: ROUTES.ACCOUNTS,
     icon: IconUser,
   },
 ]
