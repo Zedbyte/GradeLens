@@ -31,8 +31,14 @@ export class SectionController {
   static async createSection(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Only admins can create sections
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
       }
 
       const data: CreateSectionRequest = req.body;
@@ -150,7 +156,13 @@ export class SectionController {
   static async updateSection(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const userRole = req.user?.role;
       const updates: UpdateSectionRequest = req.body;
+
+      // Only admins can update sections
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
 
       const section = await SectionModel.findOne({
         _id: id,
@@ -189,6 +201,12 @@ export class SectionController {
   static async deleteSection(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const userRole = req.user?.role;
+
+      // Only admins can delete sections
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
 
       const section = await SectionModel.findOne({
         _id: id,

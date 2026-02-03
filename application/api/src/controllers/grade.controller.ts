@@ -28,8 +28,14 @@ export class GradeController {
   static async createGrade(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Only admins can create grades
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
       }
 
       const data: CreateGradeRequest = req.body;
@@ -140,7 +146,13 @@ export class GradeController {
   static async updateGrade(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const userRole = req.user?.role;
       const updates: UpdateGradeRequest = req.body;
+
+      // Only admins can update grades
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
 
       const grade = await GradeModel.findOne({
         _id: id,
@@ -182,6 +194,12 @@ export class GradeController {
   static async deleteGrade(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const userRole = req.user?.role;
+
+      // Only admins can delete grades
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
 
       const grade = await GradeModel.findOne({
         _id: id,

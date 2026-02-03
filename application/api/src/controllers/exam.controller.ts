@@ -82,9 +82,15 @@ export class ExamController {
   static async listExams(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       const { status, class_id, template_id, page = 1, limit = 50 } = req.query;
 
-      const query: any = { created_by: userId, is_active: true };
+      const query: any = { is_active: true };
+      
+      // Teachers can only see their own exams, admins see all
+      if (userRole === "teacher") {
+        query.created_by = userId;
+      }
       
       if (status) {
         query.status = status;
@@ -130,12 +136,17 @@ export class ExamController {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
 
-      const exam = await ExamModel.findOne({
-        _id: id,
-        created_by: userId,
-        is_active: true
-      }).populate("class_id", "class_id name academic_year student_count");
+      const query: any = { _id: id, is_active: true };
+      
+      // Teachers can only access their own exams, admins can access all
+      if (userRole === "teacher") {
+        query.created_by = userId;
+      }
+
+      const exam = await ExamModel.findOne(query)
+        .populate("class_id", "class_id name academic_year student_count");
 
       if (!exam) {
         return res.status(404).json({ error: "Exam not found" });
@@ -155,13 +166,17 @@ export class ExamController {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       const updates: UpdateExamRequest = req.body;
 
-      const exam = await ExamModel.findOne({
-        _id: id,
-        created_by: userId,
-        is_active: true
-      });
+      const query: any = { _id: id, is_active: true };
+      
+      // Teachers can only update their own exams, admins can update all
+      if (userRole === "teacher") {
+        query.created_by = userId;
+      }
+
+      const exam = await ExamModel.findOne(query);
 
       if (!exam) {
         return res.status(404).json({ error: "Exam not found" });
@@ -196,12 +211,16 @@ export class ExamController {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
 
-      const exam = await ExamModel.findOne({
-        _id: id,
-        created_by: userId,
-        is_active: true
-      });
+      const query: any = { _id: id, is_active: true };
+      
+      // Teachers can only delete their own exams, admins can delete all
+      if (userRole === "teacher") {
+        query.created_by = userId;
+      }
+
+      const exam = await ExamModel.findOne(query);
 
       if (!exam) {
         return res.status(404).json({ error: "Exam not found" });
@@ -229,16 +248,20 @@ export class ExamController {
       const { id } = req.params;
       const { status } = req.body;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
 
       if (!["draft", "active", "completed", "archived"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
       }
 
-      const exam = await ExamModel.findOne({
-        _id: id,
-        created_by: userId,
-        is_active: true
-      });
+      const query: any = { _id: id, is_active: true };
+      
+      // Teachers can only update status of their own exams, admins can update all
+      if (userRole === "teacher") {
+        query.created_by = userId;
+      }
+
+      const exam = await ExamModel.findOne(query);
 
       if (!exam) {
         return res.status(404).json({ error: "Exam not found" });

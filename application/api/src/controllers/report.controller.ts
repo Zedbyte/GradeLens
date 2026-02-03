@@ -29,6 +29,8 @@ export class ReportController {
     static async getPLEntries(req: Request, res: Response, next: NextFunction) {
         try {
             const { grade_id, class_id, exam_id, view = "section" } = req.query;
+            const userId = req.user?.id;
+            const userRole = req.user?.role;
 
             // Validate required parameters
             if (!grade_id || !class_id || !exam_id) {
@@ -57,6 +59,11 @@ export class ReportController {
             const examDoc = await ExamModel.findById(examObjectId).lean();
             if (!examDoc) {
                 return res.status(404).json({ error: "Exam not found" });
+            }
+
+            // Teachers can only access reports for their own exams
+            if (userRole === "teacher" && examDoc.created_by !== userId) {
+                return res.status(403).json({ error: "Access denied: You can only view reports for your own exams" });
             }
 
             // Validate exam belongs to selected class
@@ -144,6 +151,8 @@ export class ReportController {
     static async getItemEntries(req: Request, res: Response, next: NextFunction) {
         try {
             const { grade_id, class_id, exam_id, view = "section" } = req.query;
+            const userId = req.user?.id;
+            const userRole = req.user?.role;
 
             // Validate required parameters
             if (!grade_id || !class_id || !exam_id) {
@@ -172,6 +181,11 @@ export class ReportController {
             const examDoc = await ExamModel.findById(examObjectId).lean();
             if (!examDoc) {
                 return res.status(404).json({ error: "Exam not found" });
+            }
+
+            // Teachers can only access reports for their own exams
+            if (userRole === "teacher" && examDoc.created_by !== userId) {
+                return res.status(403).json({ error: "Access denied: You can only view reports for your own exams" });
             }
 
             // Validate exam belongs to selected class
@@ -265,6 +279,8 @@ export class ReportController {
     static async exportReport(req: Request, res: Response, next: NextFunction) {
         try {
             const { grade_id, class_id, exam_id } = req.query;
+            const userId = req.user?.id;
+            const userRole = req.user?.role;
 
             // Validate required parameters
             if (!grade_id || !class_id || !exam_id) {
@@ -292,6 +308,11 @@ export class ReportController {
             }
             if (!gradeDoc) {
                 return res.status(404).json({ error: "Grade not found" });
+            }
+
+            // Teachers can only export reports for their own exams
+            if (userRole === "teacher" && examDoc.created_by !== userId) {
+                return res.status(403).json({ error: "Access denied: You can only export reports for your own exams" });
             }
 
             // Validate exam belongs to class

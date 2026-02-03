@@ -3,6 +3,7 @@ import { v4 as uuid } from "uuid";
 import path from "path";
 import fs from "fs";
 import { createScan, listScans, getScan, updateScanAnswers, markScanAsReviewed } from "../services/scan.service.ts";
+import { ExamModel } from "../models/Exam.ts";
 
 const STORAGE_DIR = process.env.SCAN_STORAGE_DIR || "/data/scans";
 
@@ -13,6 +14,8 @@ if (!fs.existsSync(STORAGE_DIR)) {
 export async function uploadScan(req: Request, res: Response) {
   try {
     const { image, exam_id, student_id, redo_existing } = req.body;
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
 
     if (!image) {
       return res.status(400).json({ error: "Image is required" });
@@ -22,6 +25,17 @@ export async function uploadScan(req: Request, res: Response) {
     }
     if (!student_id) {
       return res.status(400).json({ error: "student_id is required" });
+    }
+
+    // Verify exam ownership for teachers
+    if (userRole === "teacher") {
+      const exam = await ExamModel.findById(exam_id);
+      if (!exam) {
+        return res.status(404).json({ error: "Exam not found" });
+      }
+      if (exam.created_by !== userId) {
+        return res.status(403).json({ error: "Access denied: You can only upload scans for your own exams" });
+      }
     }
 
     const scan_id = uuid();

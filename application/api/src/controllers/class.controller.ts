@@ -18,8 +18,14 @@ export class ClassController {
   static async createClass(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Only admins can create classes
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
       }
 
       const data: CreateClassRequest = req.body;
@@ -69,7 +75,7 @@ export class ClassController {
       const userId = req.user?.id;
       const { status, academic_year, page = 1, limit = 50 } = req.query;
 
-      const query: any = { teacher_id: userId };
+      const query: any = {};
       
       if (status) {
         query.status = status;
@@ -111,10 +117,7 @@ export class ClassController {
       const userId = req.user?.id;
       const { populate_students } = req.query;
 
-      let query = ClassModel.findOne({
-        _id: id,
-        teacher_id: userId
-      });
+      let query = ClassModel.findById(id);
 
       if (populate_students === "true") {
         query = query.populate("student_ids", "student_id first_name last_name email status");
@@ -140,12 +143,15 @@ export class ClassController {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       const updates: UpdateClassRequest = req.body;
 
-      const classDoc = await ClassModel.findOne({
-        _id: id,
-        teacher_id: userId
-      });
+      // Only admins can update classes
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
+
+      const classDoc = await ClassModel.findById(id);
 
       if (!classDoc) {
         return res.status(404).json({ error: "Class not found" });
@@ -205,11 +211,14 @@ export class ClassController {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
 
-      const classDoc = await ClassModel.findOne({
-        _id: id,
-        teacher_id: userId
-      });
+      // Only admins can delete classes
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
+
+      const classDoc = await ClassModel.findById(id);
 
       if (!classDoc) {
         return res.status(404).json({ error: "Class not found" });
@@ -239,13 +248,19 @@ export class ClassController {
       const { id } = req.params;
       const { student_id } = req.body;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
+
+      // Only admins can add students to classes
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
 
       if (!student_id) {
         return res.status(400).json({ error: "student_id is required" });
       }
 
       const [classDoc, student] = await Promise.all([
-        ClassModel.findOne({ _id: id, teacher_id: userId }),
+        ClassModel.findById(id),
         StudentModel.findById(student_id)
       ]);
 
@@ -291,11 +306,17 @@ export class ClassController {
     try {
       const { id, studentId } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
+
+      // Only admins can remove students from classes
+      if (userRole !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
 
       const studentIdStr = Array.isArray(studentId) ? studentId[0] : studentId;
 
       const [classDoc, student] = await Promise.all([
-        ClassModel.findOne({ _id: id, teacher_id: userId }),
+        ClassModel.findById(id),
         StudentModel.findById(studentIdStr)
       ]);
 
