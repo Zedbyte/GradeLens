@@ -20,6 +20,9 @@ import type { Account } from "../types/accounts.types";
 const accountSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
+  firstName: z.string().min(1, "First name is required"),
+  middleName: z.string().optional(),
+  lastName: z.string().min(1, "Last name is required"),
   role: z.enum(["teacher", "admin"]),
   isActive: z.boolean(),
   emailVerified: z.boolean(),
@@ -61,6 +64,9 @@ export function AccountFormDialog({
     if (account && mode === "edit") {
       setValue("email", account.email);
       setValue("password", "");
+      setValue("firstName", account.firstName);
+      setValue("middleName", account.middleName || "");
+      setValue("lastName", account.lastName);
       setValue("role", account.role);
       setValue("isActive", account.isActive);
       setValue("emailVerified", account.emailVerified);
@@ -68,6 +74,9 @@ export function AccountFormDialog({
       reset({
         email: "",
         password: "",
+        firstName: "",
+        middleName: "",
+        lastName: "",
         role: "teacher",
         isActive: true,
         emailVerified: false,
@@ -101,6 +110,49 @@ export function AccountFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">
+              First Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="firstName"
+              type="text"
+              {...register("firstName")}
+              placeholder="John"
+            />
+            {errors.firstName && (
+              <p className="text-sm text-destructive">{errors.firstName.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="middleName">Middle Name</Label>
+            <Input
+              id="middleName"
+              type="text"
+              {...register("middleName")}
+              placeholder="Michael (optional)"
+            />
+            {errors.middleName && (
+              <p className="text-sm text-destructive">{errors.middleName.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="lastName">
+              Last Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="lastName"
+              type="text"
+              {...register("lastName")}
+              placeholder="Doe"
+            />
+            {errors.lastName && (
+              <p className="text-sm text-destructive">{errors.lastName.message}</p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">
               Email <span className="text-destructive">*</span>

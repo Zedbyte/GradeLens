@@ -10,6 +10,9 @@ export type UserRole = "teacher" | "admin";
 export interface Account {
   _id: string;
   email: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   role: UserRole;
   isActive: boolean;
   emailVerified: boolean;
@@ -20,6 +23,9 @@ export interface Account {
 export interface CreateAccountRequest {
   email: string;
   password: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   role?: UserRole;
   isActive?: boolean;
   emailVerified?: boolean;
@@ -28,6 +34,9 @@ export interface CreateAccountRequest {
 export interface UpdateAccountRequest {
   email?: string;
   password?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
   role?: UserRole;
   isActive?: boolean;
   emailVerified?: boolean;

@@ -26,6 +26,8 @@ async function seed() {
     await UserModel.create({
         email: "admin@gradelens.app",
         passwordHash,
+        firstName: "Admin",
+        lastName: "User",
         role: "admin",
         isActive: true,
         emailVerified: true,

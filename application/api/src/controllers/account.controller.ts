@@ -38,6 +38,10 @@ export class AccountController {
             return res.status(409).json({ error: "Email already exists" });
         }
 
+        if (!data.firstName || !data.lastName) {
+            return res.status(400).json({ error: "First name and last name are required" });
+        }
+
         // Hash password
         const passwordHash = await bcrypt.hash(data.password, 10);
 
@@ -45,6 +49,9 @@ export class AccountController {
         const user = new UserModel({
             email: data.email.toLowerCase(),
             passwordHash,
+            firstName: data.firstName.trim(),
+            middleName: data.middleName?.trim(),
+            lastName: data.lastName.trim(),
             role: data.role || "teacher",
             isActive: data.isActive !== undefined ? data.isActive : true,
             emailVerified: data.emailVerified || false,
@@ -205,7 +212,10 @@ export class AccountController {
         if (updates.role !== undefined) user.role = updates.role;
         if (updates.isActive !== undefined) user.isActive = updates.isActive;
         if (updates.emailVerified !== undefined) user.emailVerified = updates.emailVerified;
-
+        if (updates.firstName) user.firstName = updates.firstName.trim();
+        if (updates.middleName !== undefined) user.middleName = updates.middleName?.trim();
+        if (updates.lastName) user.lastName = updates.lastName.trim();
+        
         await user.save();
 
         // Return user without sensitive data
