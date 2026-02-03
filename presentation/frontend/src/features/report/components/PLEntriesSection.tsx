@@ -68,7 +68,7 @@ export const PLEntriesSections: React.FC<Props> = ({
                 <div className="rounded-lg bg-background p-3 border border-border/50">
                   <p className="text-xs font-medium text-muted-foreground">PL (%)</p>
                   <p className="mt-1 text-lg font-bold text-primary">
-                    {statistics.pl_percentage.toFixed(1)}%
+                    {statistics.pl_percentage.toFixed(2)}%
                   </p>
                 </div>
                 <div className="rounded-lg bg-background p-3 border border-border/50">
