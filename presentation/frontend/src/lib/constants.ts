@@ -3,6 +3,7 @@ export const ROUTES = {
   DASHBOARD: "/",
   SCAN: "/scans",
   STUDENTS: "/students",
+  STUDENT_PROFILE: "/students/:id",
   CLASSES: "/classes",
   EXAMS: "/exams",
   GRADES: "/grades",

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconCheck, IconClock, IconAlertCircle } from "@tabler/icons-react";
+import { Link } from "react-router-dom";
 import type { Scan } from "@packages/types/scans/scans.types";
 import type { Exam } from "@/features/exams/types/exams.types";
 import type { Student } from "@/features/students/types/students.types";
@@ -10,6 +11,7 @@ interface ScanQueueProps {
   onSelect: (id: string) => void;
   exams: Exam[];
   students: Student[];
+  showProfileLink?: boolean;
 }
 
 export function ScanQueue({
@@ -18,6 +20,7 @@ export function ScanQueue({
   onSelect,
   exams,
   students,
+  showProfileLink = false,
 }: ScanQueueProps) {
   return (
     <Card className="shadow-sm flex flex-col max-h-[calc(100vh-1rem)]">
@@ -52,9 +55,20 @@ export function ScanQueue({
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className={`font-medium truncate ${scan.status === 'outdated' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                    {student ? `${student.first_name} ${student.last_name}` : 'Unknown Student'}
-                  </p>
+                  <span className="flex items-center gap-2">
+                    <p className={`font-medium truncate ${scan.status === 'outdated' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                      {student ? `${student.first_name} ${student.last_name}` : 'Unknown Student'}
+                    </p>
+                    {showProfileLink && student && (
+                      <Link
+                        to={`/students/${student._id}`}
+                        className="text-xs text-primary hover:underline block"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View Profile
+                      </Link>
+                    )}
+                  </span>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">
                     {exam?.name || 'Unknown Exam'}
                     {scan.status === 'outdated' && <span className="ml-1 text-orange-600 font-medium">(Outdated)</span>}

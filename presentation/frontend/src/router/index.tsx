@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import StudentsPage from "@/pages/StudentsPage";
+import StudentProfilePage from "@/pages/StudentProfilePage";
 import ClassesPage from "@/pages/ClassesPage";
 import ExamsPage from "@/pages/ExamsPage";
 import { GradesPage } from "@/pages/GradesPage";
@@ -53,11 +54,22 @@ export function AppRouter() {
             <Route
             path={ROUTES.STUDENTS}
             element={
-                <AdminRoute>
+                <ProtectedRoute>
                 <AppLayout>
                     <StudentsPage />
                 </AppLayout>
-                </AdminRoute>
+                </ProtectedRoute>
+            }
+            />
+
+            <Route
+            path={ROUTES.STUDENT_PROFILE}
+            element={
+                <ProtectedRoute>
+                <AppLayout>
+                    <StudentProfilePage />
+                </AppLayout>
+                </ProtectedRoute>
             }
             />
 
