@@ -546,13 +546,30 @@ export class ReportController {
             };
         }
 
-        // Fetch all graded scans
-        const scans = await ScanModel.find({
-            exam_id: examObjectId,
-            student_id: { $in: studentIds },
-            status: "graded",
-            "grading_result.score.points_earned": { $exists: true, $type: "number" }
-        }).lean();
+        // Fetch all graded scans (exclude outdated, get most recent per student)
+        const scans = await ScanModel.aggregate([
+            {
+                $match: {
+                    exam_id: examObjectId,
+                    student_id: { $in: studentIds },
+                    status: { $in: ["graded", "reviewed"] },
+                    $nor: [{ status: "outdated" }],
+                    "grading_result.score.points_earned": { $exists: true, $type: "number" }
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $group: {
+                    _id: "$student_id",
+                    scan: { $first: "$$ROOT" }
+                }
+            },
+            {
+                $replaceRoot: { newRoot: "$scan" }
+            }
+        ]);
 
         // Extract scores
         const scores: number[] = [];
@@ -659,12 +676,14 @@ export class ReportController {
 
         // Fetch all graded scans for this exam and these students
         // Use aggregation to get only the most recent scan per student (prevent double counting)
+        // Explicitly exclude outdated scans
         const scans = await ScanModel.aggregate([
             {
                 $match: {
                     exam_id: examObjectId,
                     student_id: { $in: studentIds },
-                    status: "graded",
+                    status: { $in: ["graded", "reviewed"] },
+                    $nor: [{ status: "outdated" }],
                     "detection_result.detections": { $exists: true }
                 }
             },
