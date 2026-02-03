@@ -55,7 +55,7 @@ const navMain = [
     title: "Students", //Create accounts, and students.
     url: ROUTES.STUDENTS,
     icon: IconUser,
-    roles: ["admin"], // Admin only
+    roles: ["teacher", "admin"], // Both can view
   },
   {
     title: "Classes", //Create classes and assign students to classes
