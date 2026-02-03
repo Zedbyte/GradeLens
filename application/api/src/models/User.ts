@@ -17,6 +17,9 @@ export interface RefreshToken {
 export interface UserDocument extends Document {
   email: string;
   passwordHash: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   role: UserRole;
   isActive: boolean;
   emailVerified: boolean;
@@ -66,6 +69,23 @@ const UserSchema = new Schema<UserDocument>(
       type: String,
       required: true,
       select: false, // 🔐 never returned unless explicitly requested
+    },
+
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    middleName: {
+      type: String,
+      trim: true,
+    },
+
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
     },
 
     role: {
