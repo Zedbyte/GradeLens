@@ -6,7 +6,7 @@ import type {
   ExamListResponse,
   ExamStatistics,
 } from "../types/exams.types.ts";
-import type { Scan } from "@/features/scans/types/scans.types.ts";
+import type { Scan } from "@packages/types/scans/scans.types.ts";
 
 export const ExamsApi = {
   /**
