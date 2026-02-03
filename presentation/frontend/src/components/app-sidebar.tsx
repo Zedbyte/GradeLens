@@ -37,46 +37,55 @@ const navMain = [
     title: "Dashboard",
     url: ROUTES.DASHBOARD,
     icon: IconDashboard,
+    roles: ["teacher", "admin"], // Available to both
   },
   {
     title: "Scans", //Page to scan/upload student answer sheets
     url: ROUTES.SCAN,
     icon: IconCamera,
+    roles: ["teacher", "admin"],
   },
   {
     title: "Exams", //Page where we can create exams and assign them to classes, and answer keys
     url: ROUTES.EXAMS,
     icon: IconWallpaper,
+    roles: ["teacher", "admin"],
   },
   {
     title: "Students", //Create accounts, and students.
     url: ROUTES.STUDENTS,
     icon: IconUser,
+    roles: ["admin"], // Admin only
   },
   {
     title: "Classes", //Create classes and assign students to classes
     url: ROUTES.CLASSES,
     icon: IconCategoryPlus,
+    roles: ["admin"], // Admin only
   },
   {
     title: "Grades", //Manage grade levels
     url: ROUTES.GRADES,
     icon: IconSchool,
+    roles: ["admin"], // Admin only
   },
   {
     title: "Sections", //Manage sections
     url: ROUTES.SECTIONS,
     icon: IconCategory,
+    roles: ["admin"], // Admin only
   },
   {
     title: "Analytics", //This includes per student summary, mean-pl etc.
     url: ROUTES.REPORTS,
     icon: IconFileAnalytics,
+    roles: ["teacher", "admin"],
   },
   {
     title: "Accounts", //Create accounts, and students.
     url: ROUTES.ACCOUNTS,
     icon: IconUser,
+    roles: ["admin"], // Admin only
   },
 ]
 
@@ -114,6 +123,12 @@ const navMain = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
 
+  // Filter navigation items based on user role
+  const filteredNavMain = React.useMemo(() => {
+    if (!user) return [];
+    return navMain.filter(item => item.roles.includes(user.role));
+  }, [user]);
+
   return (
     <Sidebar collapsible="offcanvas" {...props} className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-3">
@@ -135,7 +150,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
+        <NavMain items={filteredNavMain} />
         {/* <NavDocuments items={documents} /> */}
         {/* <NavSecondary items={navSecondary} className="mt-auto" /> */}
       </SidebarContent>

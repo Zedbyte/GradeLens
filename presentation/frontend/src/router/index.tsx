@@ -8,6 +8,7 @@ import { GradesPage } from "@/pages/GradesPage";
 import { SectionsPage } from "@/pages/SectionsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import { ProtectedRoute } from "./guards/ProtectedRoute";
+import { AdminRoute } from "./guards/AdminRoute";
 import { PublicRoute } from "./guards/PublicRoute";
 import { AppLayout } from "@/layouts/AppLayout";
 import { ROUTES } from "@/lib/constants";
@@ -52,22 +53,22 @@ export function AppRouter() {
             <Route
             path={ROUTES.STUDENTS}
             element={
-                <ProtectedRoute>
+                <AdminRoute>
                 <AppLayout>
                     <StudentsPage />
                 </AppLayout>
-                </ProtectedRoute>
+                </AdminRoute>
             }
             />
 
             <Route
             path={ROUTES.CLASSES}
             element={
-                <ProtectedRoute>
+                <AdminRoute>
                 <AppLayout>
                     <ClassesPage />
                 </AppLayout>
-                </ProtectedRoute>
+                </AdminRoute>
             }
             />
 
@@ -96,33 +97,33 @@ export function AppRouter() {
             <Route
             path={ROUTES.GRADES}
             element={
-                <ProtectedRoute>
+                <AdminRoute>
                 <AppLayout>
                     <GradesPage />
                 </AppLayout>
-                </ProtectedRoute>
+                </AdminRoute>
             }
             />
 
             <Route
             path={ROUTES.SECTIONS}
             element={
-                <ProtectedRoute>
+                <AdminRoute>
                 <AppLayout>
                     <SectionsPage />
                 </AppLayout>
-                </ProtectedRoute>
+                </AdminRoute>
             }
             />
 
             <Route
             path={ROUTES.ACCOUNTS}
             element={
-                <ProtectedRoute>
+                <AdminRoute>
                 <AppLayout>
                     <AccountsPage />
                 </AppLayout>
-                </ProtectedRoute>
+                </AdminRoute>
             }
             />
         </Routes>
