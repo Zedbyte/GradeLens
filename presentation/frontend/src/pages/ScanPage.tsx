@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IconCamera, IconUpload, IconEdit, IconAlertTriangle } from "@tabler/icons-react";
+import { IconCamera, IconUpload, IconAlertTriangle } from "@tabler/icons-react";
 import { useGrades } from "@/features/grades/hooks/useGrades";
 import { useSections } from "@/features/sections/hooks/useSections";
 import { useClasses } from "@/features/classes/hooks/useClasses";
@@ -266,7 +265,7 @@ export function ScanPage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="scanning" className="flex items-center gap-2">
                 <IconCamera className="h-4 w-4" />
                 Scanning
@@ -275,10 +274,10 @@ export function ScanPage() {
                 <IconUpload className="h-4 w-4" />
                 Upload
               </TabsTrigger>
-              <TabsTrigger value="manual" className="flex items-center gap-2">
+              {/* <TabsTrigger value="manual" className="flex items-center gap-2">
                 <IconEdit className="h-4 w-4" />
                 Manual
-              </TabsTrigger>
+              </TabsTrigger> */}
             </TabsList>
 
             <TabsContent value="scanning" className="space-y-4 py-4">
@@ -303,7 +302,7 @@ export function ScanPage() {
               />
             </TabsContent>
 
-            <TabsContent value="manual" className="space-y-4 py-4">
+            {/* <TabsContent value="manual" className="space-y-4 py-4">
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 space-y-4">
                 <IconEdit className="h-16 w-16 text-muted-foreground" />
                 <div className="text-center space-y-2">
@@ -317,7 +316,7 @@ export function ScanPage() {
                   Start Manual Entry
                 </Button>
               </div>
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </CardContent>
       </Card>
@@ -332,6 +331,7 @@ export function ScanPage() {
             onSelect={selectScan}
             exams={exams}
             students={students}
+            showProfileLink={true}
           />
         </div>
 
