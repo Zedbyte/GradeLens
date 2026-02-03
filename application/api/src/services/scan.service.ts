@@ -134,12 +134,41 @@ export async function createScan(
   return scan;
 }
 
-export async function listScans() {
-  return ScanModel.find().sort({ createdAt: -1 }).lean();
+export async function listScans(userId?: string, userRole?: string) {
+  // If admin or no user provided, return all scans
+  if (!userId || userRole === "admin") {
+    return ScanModel.find().sort({ createdAt: -1 }).lean();
+  }
+
+  // For teachers, only return scans from their own exams
+  const teacherExams = await ExamModel.find({ created_by: userId }).select("_id").lean();
+  const examIds = teacherExams.map(exam => exam._id);
+
+  return ScanModel.find({ exam_id: { $in: examIds } }).sort({ createdAt: -1 }).lean();
 }
 
-export async function getScan(scan_id: string) {
-  return ScanModel.findOne({ scan_id }).lean();
+export async function getScan(scan_id: string, userId?: string, userRole?: string) {
+  const scan = await ScanModel.findOne({ scan_id }).lean();
+  
+  if (!scan) {
+    return null;
+  }
+
+  // If admin or no user provided, return the scan
+  if (!userId || userRole === "admin") {
+    return scan;
+  }
+
+  // For teachers, verify the scan's exam belongs to them
+  if (scan.exam_id) {
+    const exam = await ExamModel.findById(scan.exam_id).select("created_by").lean();
+    if (exam && exam.created_by === userId) {
+      return scan;
+    }
+  }
+
+  // Return null if teacher doesn't own the exam
+  return null;
 }
 
 export async function updateScanAnswers(

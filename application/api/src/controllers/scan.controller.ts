@@ -88,12 +88,19 @@ export async function uploadAnswerKeyScan(req: Request, res: Response) {
 }
 
 export async function getScans(req: Request, res: Response) {
-  res.json(await listScans());
+  const userId = (req as any).user?.id;
+  const userRole = (req as any).user?.role;
+  
+  const scans = await listScans(userId, userRole);
+  res.json(scans);
 }
 
 export async function getScanById(req: Request, res: Response) {
   const scan_id = Array.isArray(req.params.scan_id) ? req.params.scan_id[0] : req.params.scan_id;
-  const scan = await getScan(scan_id);
+  const userId = (req as any).user?.id;
+  const userRole = (req as any).user?.role;
+  
+  const scan = await getScan(scan_id, userId, userRole);
   if (!scan) return res.sendStatus(404);
   res.json(scan);
 }
@@ -102,13 +109,20 @@ export async function updateScanAnswersController(req: Request, res: Response) {
   try {
     const scan_id = Array.isArray(req.params.scan_id) ? req.params.scan_id[0] : req.params.scan_id;
     const { answers } = req.body;
+    const user_id = (req as any).user?.id || (req as any).user?._id || "unknown";
+    const userRole = (req as any).user?.role;
 
     if (!answers || typeof answers !== "object") {
       return res.status(400).json({ error: "answers is required and must be an object" });
     }
 
-    // Get user ID from authenticated request
-    const user_id = (req as any).user?.id || (req as any).user?._id || "unknown";
+    // Verify exam ownership for teachers before allowing edit
+    if (userRole === "teacher") {
+      const existingScan = await getScan(scan_id, user_id, userRole);
+      if (!existingScan) {
+        return res.status(404).json({ error: "Scan not found" });
+      }
+    }
 
     const scan = await updateScanAnswers(scan_id, answers, user_id);
 
@@ -137,9 +151,16 @@ export async function markAsReviewedController(req: Request, res: Response) {
   try {
     const scan_id = Array.isArray(req.params.scan_id) ? req.params.scan_id[0] : req.params.scan_id;
     const { review_notes } = req.body;
-
-    // Get user ID from authenticated request
     const user_id = (req as any).user?.id || (req as any).user?._id || "unknown";
+    const userRole = (req as any).user?.role;
+
+    // Verify exam ownership for teachers before allowing review
+    if (userRole === "teacher") {
+      const existingScan = await getScan(scan_id, user_id, userRole);
+      if (!existingScan) {
+        return res.status(404).json({ error: "Scan not found" });
+      }
+    }
 
     const scan = await markScanAsReviewed(scan_id, user_id, review_notes);
 
