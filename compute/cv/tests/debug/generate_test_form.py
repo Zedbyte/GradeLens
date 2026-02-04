@@ -131,9 +131,55 @@ class TestFormGenerator:
         # Don't draw border - it interferes with corner registration marks
         # If border is needed, it should be drawn AFTER marks or much further in
         
-        # Add header
-        cv2.putText(form, "SAMPLE EXAM FORM", (width // 2 - 200, 150),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.2, 0, 2)
+        # Render header fields if present
+        if hasattr(self.template, 'header_fields') and self.template.header_fields:
+            form = self._add_header_fields(form)
+        else:
+            # Fallback: Add simple header for templates without header_fields
+            cv2.putText(form, "SAMPLE EXAM FORM", (width // 2 - 200, 150),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.2, 0, 2)
+        
+        return form
+    
+    def _add_header_fields(self, form: np.ndarray) -> np.ndarray:
+        """Render header fields (title, subtitle, text fields) from template."""
+        for field in self.template.header_fields:
+            x, y = field.position.x, field.position.y
+            
+            if field.type == "title":
+                # Large centered title
+                font_size = field.font_size if hasattr(field, 'font_size') and field.font_size else 2.0
+                thickness = 3 if field.font_weight == "bold" else 2
+                text_size = cv2.getTextSize(field.label, cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
+                text_x = x - text_size[0] // 2
+                cv2.putText(form, field.label, (text_x, y),
+                           cv2.FONT_HERSHEY_SIMPLEX, font_size, 0, thickness)
+            
+            elif field.type == "subtitle":
+                # Small centered subtitle
+                font_size = field.font_size if hasattr(field, 'font_size') and field.font_size else 0.7
+                text_size = cv2.getTextSize(field.label, cv2.FONT_HERSHEY_SIMPLEX, font_size, 1)[0]
+                text_x = x - text_size[0] // 2
+                cv2.putText(form, field.label, (text_x, y),
+                           cv2.FONT_HERSHEY_SIMPLEX, font_size, 0, 1)
+            
+            elif field.type == "text_field":
+                # Input field with label and box
+                label_width = cv2.getTextSize(field.label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0][0]
+                
+                # Draw label
+                cv2.putText(form, field.label, (x, y + 25),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, 0, 1)
+                
+                # Draw input box
+                box_x = x + label_width + 15
+                box_width = field.width - label_width - 20 if hasattr(field, 'width') and field.width else 400
+                box_height = field.height if hasattr(field, 'height') and field.height else 40
+                
+                cv2.rectangle(form, 
+                             (box_x, y), 
+                             (box_x + box_width, y + box_height),
+                             0, 2)
         
         return form
     

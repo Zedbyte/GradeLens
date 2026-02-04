@@ -52,6 +52,21 @@ class Question(BaseModel):
     )
 
 
+class HeaderField(BaseModel):
+    """Header field definition for student information."""
+    field_id: str = Field(..., description="Field identifier (e.g., 'name', 'student_number')")
+    label: str = Field(..., description="Display label (e.g., 'Name:', 'Student Number:')")
+    type: Literal["title", "subtitle", "text_field"] = Field(
+        ...,
+        description="Field type: title (large centered), subtitle (small centered), text_field (input box)"
+    )
+    position: Position = Field(..., description="Field position (center for title/subtitle, top-left for text_field)")
+    width: Optional[int] = Field(None, description="Field width in pixels (for text_field only)")
+    height: Optional[int] = Field(None, description="Field height in pixels (for text_field only)")
+    font_size: Optional[float] = Field(None, description="Font size multiplier (for title/subtitle)")
+    font_weight: Optional[Literal["normal", "bold"]] = Field("normal", description="Font weight")
+
+
 class TemplateMetadata(BaseModel):
     """Additional template information."""
     created_at: Optional[datetime] = None
@@ -75,6 +90,10 @@ class Template(BaseModel):
         min_items=3,
         max_items=4,
         description="Alignment markers for perspective correction"
+    )
+    header_fields: Optional[List[HeaderField]] = Field(
+        None,
+        description="Optional header fields for student information (name, student number, etc.)"
     )
     bubble_config: BubbleConfig
     questions: List[Question] = Field(..., min_items=1)

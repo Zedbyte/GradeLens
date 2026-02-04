@@ -1,7 +1,9 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Exam } from "../types/exams.types";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { IconEdit, IconTrash, IconClipboard } from "@tabler/icons-react";
+import { useTemplate } from "@/hooks/useTemplate";
 
 export type ExamColumnActions = {
   onEdit: (q: Exam) => void;
@@ -18,6 +20,15 @@ export function getExamColumns({ onEdit, onDelete }: ExamColumnActions): ColumnD
     {
       accessorKey: "status",
       header: "Status",
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string;
+        const variant = 
+          status === "active" ? "default" :
+          status === "draft" ? "secondary" :
+          status === "completed" ? "outline" :
+          "destructive";
+        return <Badge variant={variant}>{status}</Badge>;
+      },
     },
     {
       accessorKey: "question_count",
@@ -31,6 +42,15 @@ export function getExamColumns({ onEdit, onDelete }: ExamColumnActions): ColumnD
     {
       accessorKey: "template_id",
       header: "Template",
+      cell: ({ row }) => {
+        const templateId = row.getValue("template_id") as string;
+        const TemplateCell = () => {
+          const { template, loading } = useTemplate(templateId);
+          if (loading) return <div className="text-muted-foreground">Loading...</div>;
+          return <div>{template?.name || templateId}</div>;
+        };
+        return <TemplateCell />;
+      },
     },
     {
       accessorKey: "scheduled_date",

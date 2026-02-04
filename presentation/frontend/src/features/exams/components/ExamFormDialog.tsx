@@ -167,7 +167,7 @@ export function ExamFormDialog({
       reset({
         name: "",
         description: "",
-        template_id: "form_A",
+        template_id: "gl_form_60",
         class_id: "",
         scheduled_date: "",
         due_date: "",
@@ -291,9 +291,7 @@ export function ExamFormDialog({
                 {...register("template_id")}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
               >
-                <option value="form_A">Form A (50 questions)</option>
-                <option value="form_B">Form B (50 questions)</option>
-                <option value="form_60q">Form 60Q (60 questions)</option>
+                <option value="gl_form_60">60-Questions Form</option>
               </select>
               {errors.template_id && (
                 <p className="text-sm text-destructive">{errors.template_id.message}</p>
@@ -392,7 +390,7 @@ export function ExamFormDialog({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => generateAnswerKey(templateId || "form_A")}
+                          onClick={() => generateAnswerKey(templateId || "gl_form_60")}
                         >
                           <IconPlus className="mr-2 h-4 w-4" />
                           Generate from Template
