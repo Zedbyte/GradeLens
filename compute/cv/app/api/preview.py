@@ -202,7 +202,7 @@ async def preview_frame(request: FramePreviewRequest):
         try:
             marks = detect_registration_marks(
                 corrected,
-                template,
+                template.registration_marks,
                 adaptive_search=True
             )
             
