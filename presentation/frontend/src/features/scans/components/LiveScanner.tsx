@@ -76,7 +76,7 @@ export function LiveScanner({
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 5]);
     
-    const guidePadding = 20;
+    const guidePadding = 5;
     ctx.strokeRect(
       guidePadding,
       guidePadding,
@@ -85,44 +85,53 @@ export function LiveScanner({
     );
     ctx.setLineDash([]);
 
-    // Draw detected paper contours (live edge detection)
+    // Draw detected paper corners as green squares (live edge detection)
+    // Note: paper_corners are in backend image coordinate space - need to scale to canvas space
     if (previewData.paper_corners && previewData.paper_corners.length === 4) {
       const corners = previewData.paper_corners;
       
-      ctx.strokeStyle = "#22c55e";
-      ctx.lineWidth = 4;
-      ctx.shadowColor = "#22c55e";
-      ctx.shadowBlur = 10;
+      // Scale coordinates from backend image space to canvas space
+      const scaleX = canvas.width / previewData.image_width;
+      const scaleY = canvas.height / previewData.image_height;
       
-      // Draw detected paper boundary
-      ctx.beginPath();
+      // Calculate square size relative to canvas dimensions - larger to engulf fiducials
+      const squareSize = Math.min(canvas.width, canvas.height) * 0.12; // 12% of smaller dimension (increased from 8%)
+      // Backend guarantees order: Top-Left, Top-Right, Bottom-Right, Bottom-Left
+      const cornerLabels = ["TL", "TR", "BR", "BL"];
+      
       corners.forEach((corner, i) => {
-        const x = corner.x * scaleX;
-        const y = corner.y * scaleY;
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      });
-      ctx.closePath();
-      ctx.stroke();
-      
-      // Draw corner circles
-      ctx.shadowBlur = 0;
-      corners.forEach((corner) => {
+        // Scale coordinates from backend image space to canvas display space
         const x = corner.x * scaleX;
         const y = corner.y * scaleY;
         
-        ctx.fillStyle = "#22c55e";
-        ctx.beginPath();
-        ctx.arc(x, y, 8, 0, 2 * Math.PI);
-        ctx.fill();
+        // Draw transparent green square with glow effect
+        ctx.shadowColor = "#22c55e";
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = "rgba(34, 197, 94, 0.3)"; // 30% opacity
+        ctx.fillRect(
+          x - squareSize / 2,
+          y - squareSize / 2,
+          squareSize,
+          squareSize
+        );
         
+        // Draw white border around square
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(
+          x - squareSize / 2,
+          y - squareSize / 2,
+          squareSize,
+          squareSize
+        );
+        
+        // Draw corner label in center
         ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.font = `bold ${Math.max(14, squareSize * 0.35)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(cornerLabels[i], x, y);
       });
     }
 
@@ -151,21 +160,22 @@ export function LiveScanner({
         const isLeft = mark.position.x < template.canonical_size.width / 2;
         const isTop = mark.position.y < template.canonical_size.height / 2;
         
-        // Adjust zone position to extend toward the corner
+        // Adjust zone position to extend toward the corner, but stay inside guidePadding
         let zoneX = x;
         let zoneY = y;
         
-        // Position the zone so it extends toward the actual corner
+        // Position the zone so it extends toward the corner but stays within the orange border
+        // Push inward by guidePadding amount
         if (isLeft) {
-          zoneX = x - zoneSize / 4; // Shift left toward edge
+          zoneX = Math.max(guidePadding + zoneSize / 2, x - zoneSize / 4);
         } else {
-          zoneX = x + zoneSize / 4; // Shift right toward edge
+          zoneX = Math.min(canvas.width - guidePadding - zoneSize / 2, x + zoneSize / 4);
         }
         
         if (isTop) {
-          zoneY = y - zoneSize / 4; // Shift up toward edge
+          zoneY = Math.max(guidePadding + zoneSize / 2, y - zoneSize / 4);
         } else {
-          zoneY = y + zoneSize / 4; // Shift down toward edge
+          zoneY = Math.min(canvas.height - guidePadding - zoneSize / 2, y + zoneSize / 4);
         }
         
         // Draw zone box at the adjusted position
@@ -299,8 +309,8 @@ export function LiveScanner({
 
       const drawText = (text: string, color: string) => {
         ctx.fillStyle = color;
-        ctx.strokeText(text, 20, yOffset);
-        ctx.fillText(text, 20, yOffset);
+        ctx.strokeText(text, 80, yOffset);
+        ctx.fillText(text, 80, yOffset);
         yOffset += 30;
       };
 

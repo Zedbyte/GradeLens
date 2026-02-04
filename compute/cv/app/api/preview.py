@@ -16,6 +16,7 @@ from app.pipeline.perspective import correct_perspective
 from app.pipeline.align import detect_registration_marks
 from app.pipeline.quality import assess_image_quality
 from app.templates.loader import TemplateLoader
+from app.utils.image_utils import order_points
 
 router = APIRouter(prefix="/preview", tags=["preview"])
 
@@ -48,6 +49,8 @@ class FramePreviewResponse(BaseModel):
     marks_detected: int = 0
     detected_marks: List[Position] = []
     paper_corners: Optional[List[Position]] = None  # For drawing detected paper boundary
+    image_width: int = 0  # Backend image dimensions for coordinate scaling
+    image_height: int = 0
     quality_score: Optional[float] = None
     quality_feedback: QualityFeedback
     blur_score: Optional[float] = None
@@ -102,6 +105,8 @@ async def preview_frame(request: FramePreviewRequest):
         # Initialize response
         response = FramePreviewResponse(
             paper_detected=False,
+            image_width=image.shape[1],
+            image_height=image.shape[0],
             quality_feedback=QualityFeedback(
                 message="Initializing..."
             )
@@ -167,17 +172,28 @@ async def preview_frame(request: FramePreviewRequest):
             logger.warning(f"Quality assessment failed: {e}")
         
         # Step 3: Detect paper boundary
+        # CRITICAL: Detect on ORIGINAL COLOR IMAGE for best paper edge detection
+        # Grayscale/binary can make inner content too prominent
         try:
-            corners = detect_paper_boundary(preprocessed)
+            logger.debug(f"Original image size: {image.shape}")
+            
+            # Use original image directly - best for finding paper edges vs background
+            corners = detect_paper_boundary(image, min_area_ratio=0.4, max_area_ratio=0.95)
             response.paper_detected = True
             
-            # Convert corners to response format (scale back to original image size)
-            scale_x = image.shape[1] / preprocessed.shape[1]
-            scale_y = image.shape[0] / preprocessed.shape[0]
+            # Order corners consistently: TL, TR, BR, BL
+            ordered_corners = order_points(corners)
+            
+            # Note: detect_paper_boundary already returns corners in original image coordinate space
+            # (it handles internal scaling/unscaling for performance optimization)
+            # So we can use them directly without additional scaling
             response.paper_corners = [
-                Position(x=float(corner[0] * scale_x), y=float(corner[1] * scale_y))
-                for corner in corners
+                Position(x=float(corner[0]), y=float(corner[1]))
+                for corner in ordered_corners
             ]
+            
+            logger.info(f"Paper corners detected: {[(c.x, c.y) for c in response.paper_corners]}")
+            logger.info(f"Detected area: width={(ordered_corners[1][0]-ordered_corners[0][0]):.0f}, height={(ordered_corners[2][1]-ordered_corners[0][1]):.0f}")
             
         except Exception as e:
             logger.debug(f"Paper detection failed: {e}")

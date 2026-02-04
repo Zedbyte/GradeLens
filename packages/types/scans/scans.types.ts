@@ -217,6 +217,8 @@ export interface FramePreviewResponse {
   marks_detected: number;
   detected_marks: Position[];
   paper_corners?: Position[]; // Detected paper boundary corners (for live contour display)
+  image_height: number;
+  image_width: number;
   quality_score?: number;
   quality_feedback: QualityFeedback;
   blur_score?: number;
