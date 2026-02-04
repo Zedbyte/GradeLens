@@ -175,8 +175,6 @@ async def preview_frame(request: FramePreviewRequest):
         # CRITICAL: Detect on ORIGINAL COLOR IMAGE for best paper edge detection
         # Grayscale/binary can make inner content too prominent
         try:
-            logger.debug(f"Original image size: {image.shape}")
-            
             # Use original image directly - best for finding paper edges vs background
             corners = detect_paper_boundary(image, min_area_ratio=0.4, max_area_ratio=0.95)
             response.paper_detected = True
@@ -191,9 +189,6 @@ async def preview_frame(request: FramePreviewRequest):
                 Position(x=float(corner[0]), y=float(corner[1]))
                 for corner in ordered_corners
             ]
-            
-            logger.info(f"Paper corners detected: {[(c.x, c.y) for c in response.paper_corners]}")
-            logger.info(f"Detected area: width={(ordered_corners[1][0]-ordered_corners[0][0]):.0f}, height={(ordered_corners[2][1]-ordered_corners[0][1]):.0f}")
             
         except Exception as e:
             logger.debug(f"Paper detection failed: {e}")
