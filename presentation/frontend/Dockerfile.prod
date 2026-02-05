@@ -8,8 +8,8 @@ COPY presentation/frontend/package*.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy packages directory (shared types)
-COPY packages ./packages
+# Copy packages directory to match tsconfig paths (../../packages from /app)
+COPY packages /packages
 
 # Copy environment file
 COPY presentation/frontend/.env.production .env
