@@ -28,8 +28,8 @@ services:
   # Node API (Production)
   api:
     build:
-      context: ../application/api
-      dockerfile: Dockerfile.prod
+      context: ..
+      dockerfile: application/api/Dockerfile.prod
     container_name: gradelens-api
     depends_on:
       mongo:
