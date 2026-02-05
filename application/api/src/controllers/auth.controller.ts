@@ -21,7 +21,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.cookie("refresh_token", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to true when HTTPS is available
       sameSite: "lax",
       path: API_ROUTES.BASE.API,
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
@@ -61,7 +61,7 @@ export const refresh = async (req: Request, res: Response) => {
 
     res.cookie("refresh_token", newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to true when HTTPS is available
       sameSite: "lax",
       path: API_ROUTES.BASE.API,
       maxAge: 1000 * 60 * 60 * 24 * 30,
