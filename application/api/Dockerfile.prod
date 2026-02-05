@@ -2,8 +2,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY application/api/package*.json ./
+# Copy API package files first for caching
+COPY application/api/package.json application/api/package-lock.json ./
 
 # Install ALL dependencies (including devDependencies for build)
 RUN npm ci
@@ -11,8 +11,9 @@ RUN npm ci
 # Copy packages (shared types)
 COPY packages ../packages
 
-# Copy API source
-COPY application/api ./
+# Copy API source (excluding node_modules)
+COPY application/api/src ./src
+COPY application/api/tsconfig.json application/api/tsconfig.build.json application/api/build.mjs ./
 
 # Build TypeScript
 RUN npm run build
@@ -23,10 +24,10 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package files
-COPY application/api/package*.json ./
+COPY application/api/package.json application/api/package-lock.json ./
 
-# Install dependencies
-RUN npm ci
+# Install only production dependencies
+RUN npm ci --omit=dev
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
