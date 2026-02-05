@@ -25,8 +25,8 @@ WORKDIR /app
 # Copy package files
 COPY application/api/package*.json ./
 
-# Install only production dependencies (use --omit=dev for npm 7+)
-RUN npm ci --omit=dev
+# Install dependencies
+RUN npm ci
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
