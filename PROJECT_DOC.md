@@ -454,9 +454,6 @@ class ResultsConsumer {
 ## 4. Compute Layer (Python CV)
 
 
-**Estimated Development Time: 7 days**
-
-
 ### 4.1 CV Pipeline Architecture
 
 
@@ -1181,10 +1178,6 @@ All API calls use Axios with:
 
 
 ## 6. Infrastructure & Deployment
-
-
-**Estimated Development Time: 2 days**
-
 
 ### 6.1 Docker Containerization
 
