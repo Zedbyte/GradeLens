@@ -28,19 +28,6 @@ try {
     sourcemap: true,
     outExtension: { '.js': '.js' },
     bundle: false,
-    external: [
-      'bcrypt',
-      'cookie-parser',
-      'cors',
-      'dotenv',
-      'exceljs',
-      'express',
-      'ioredis',
-      'jsonwebtoken',
-      'mongoose',
-      'multer',
-      'uuid'
-    ],
   });
   console.log('✅ Build complete!');
 } catch (error) {
