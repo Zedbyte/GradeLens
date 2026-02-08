@@ -46,7 +46,7 @@ services:
       SCAN_STORAGE_DIR: /data/scans
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      ALLOWED_ORIGINS: http://143.198.207.23
+      ALLOWED_ORIGINS: https://gradelens.app,https://www.gradelens.app,http://gradelens.app,http://www.gradelens.app
     volumes:
       - scan_data:/data/scans
       - storage_data:/app/storage
