@@ -422,14 +422,14 @@ export function LiveScanner({
   return (
     <div className="space-y-4">
       {/* Status Indicators */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant={isReady ? "default" : "secondary"}>
             <IconCamera className="mr-1 h-3 w-3" />
             {isReady ? "Camera Active" : "Initializing..."}
           </Badge>
           {template && (
-            <Badge variant="outline">
+            <Badge variant="outline" className="max-w-50 truncate">
               Template: {template.name}
             </Badge>
           )}
@@ -442,7 +442,7 @@ export function LiveScanner({
         </div>
         
         {preview && (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-muted-foreground">
               Marks: {preview.marks_detected || 0}/{template?.registration_marks.length || 4}
             </span>
