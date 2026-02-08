@@ -753,7 +753,7 @@ cd infra
 # or rebuild everything,
 docker compose build
 
-# or if frontend changes only,
+# or if frontend & api changes only,
 docker compose build api frontend --no-cache
 
 docker compose up -d
