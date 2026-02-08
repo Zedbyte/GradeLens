@@ -429,7 +429,7 @@ export function LiveScanner({
             {isReady ? "Camera Active" : "Initializing..."}
           </Badge>
           {template && (
-            <Badge variant="outline" className="max-w-50 truncate">
+            <Badge variant="outline" className="max-w-50 md:max-w-full truncate">
               Template: {template.name}
             </Badge>
           )}
