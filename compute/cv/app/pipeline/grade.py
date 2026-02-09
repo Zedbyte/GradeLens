@@ -197,6 +197,34 @@ def run_detection_pipeline(
             raise GradingPipelineError(f"Perspective correction failed: {e}")
         
         # ============================================================
+        # Stage 4.5: Validate perspective quality before alignment
+        # ============================================================
+        from app.pipeline.perspective import calculate_perspective_quality, estimate_deskew_angle
+        
+        perspective_quality = calculate_perspective_quality(
+            paper_corners,
+            preprocessed.shape[:2]
+        )
+        quality_metrics["perspective_quality"] = perspective_quality
+        
+        deskew_angle = estimate_deskew_angle(paper_corners)
+        quality_metrics["deskew_angle"] = deskew_angle
+        
+        if perspective_quality < 0.5:
+            warnings.append({
+                "code": "POOR_PERSPECTIVE",
+                "message": f"Paper perspective quality is poor ({perspective_quality:.2f}). "
+                           f"Results may be unreliable. Try scanning with less angle."
+            })
+        
+        if abs(deskew_angle) > 10:
+            warnings.append({
+                "code": "EXCESSIVE_SKEW",
+                "message": f"Paper is significantly skewed ({deskew_angle:.1f}°). "
+                           f"Results may be unreliable. Align paper straighter."
+            })
+        
+        # ============================================================
         # Stage 5: Template Alignment (Registration Marks)
         # ============================================================
         logger.info("Stage 4: Template alignment")
@@ -210,7 +238,7 @@ def run_detection_pipeline(
             if not alignment_success:
                 warnings.append({
                     "code": "ALIGNMENT_SKIPPED",
-                    "message": "Template alignment could not be performed"
+                    "message": "Template alignment was skipped (marks not reliably detected)"
                 })
                 aligned = warped
                 
@@ -393,7 +421,7 @@ def run_detection_pipeline(
                                 color = (0, 255, 0)  # Green
                                 thickness = 3
                             elif detection.detection_status == 'ambiguous':
-                                color = (0, 0, 255)  # Red
+                                color = (0, 165, 255)  # Orange for ambiguous
                                 thickness = 3
                             else:
                                 color = (0, 165, 255)  # Orange
@@ -404,12 +432,37 @@ def run_detection_pipeline(
                         
                         cv2.circle(scoring_vis, (x, y), radius, color, thickness)
                         
-                        # Add fill percentage
+                        # Add fill percentage with visible text
                         fill_pct = detection.fill_ratios.get(option, 0) * 100
                         if fill_pct > 0:
                             text = f"{fill_pct:.0f}%"
-                            cv2.putText(scoring_vis, text, (x + radius + 5, y + 5),
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+                            text_pos = (x + radius + 5, y + 5)
+                            
+                            # Color-code by fill level: green=high, orange=medium, red=low
+                            if fill_pct >= 50:
+                                text_color = (0, 200, 0)    # Green
+                            elif fill_pct >= 14:
+                                text_color = (0, 165, 255)  # Orange (matches fill_threshold)
+                            else:
+                                text_color = (0, 0, 255)    # Red
+                            
+                            # Draw black outline first for contrast, then colored text
+                            cv2.putText(scoring_vis, text, text_pos,
+                                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 3)
+                            cv2.putText(scoring_vis, text, text_pos,
+                                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, text_color, 1)
+                    
+                    # Draw question number + status label for ambiguous/unanswered items
+                    if detection.detection_status in ('ambiguous', 'unanswered'):
+                        first_option_pos = list(question_template.options.values())[0]
+                        qx = int(first_option_pos.x) if hasattr(first_option_pos, 'x') else int(first_option_pos[0])
+                        qy = int(first_option_pos.y) if hasattr(first_option_pos, 'y') else int(first_option_pos[1])
+                        label = f"Q{detection.question_id}?"
+                        label_color = (0, 165, 255) if detection.detection_status == 'ambiguous' else (0, 0, 255)
+                        cv2.putText(scoring_vis, label, (qx - radius - 60, qy + 5),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 3)
+                        cv2.putText(scoring_vis, label, (qx - radius - 60, qy + 5),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.45, label_color, 1)
             
             path_scoring = save_visualization(scoring_vis, "9_fill_scoring")
         

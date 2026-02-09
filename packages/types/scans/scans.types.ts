@@ -204,6 +204,8 @@ export interface QualityFeedback {
   too_dark: boolean;
   too_bright: boolean;
   skewed: boolean;
+  too_skewed: boolean;
+  poor_perspective: boolean;
   message: string;
 }
 
@@ -224,6 +226,7 @@ export interface FramePreviewResponse {
   blur_score?: number;
   brightness?: number;
   skew_angle?: number;
+  perspective_quality?: number;
   
   // Debug images (base64-encoded) - entire pipeline
   original_image?: string;

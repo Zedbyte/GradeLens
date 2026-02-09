@@ -113,12 +113,17 @@ def extract_all_bubbles(
     
     logger.debug(f"Extracting bubbles for {len(template.questions)} questions")
     
+    # Use generous padding (75% of radius) to tolerate slight misalignment
+    # This ensures the filled area is captured even with small positional errors
+    # and half-shaded bubbles that extend beyond the circle boundary
+    extraction_padding = max(12, int(bubble_radius * 0.75))
+    
     for question in template.questions:
         bubbles = extract_question_bubbles(
             image,
             question,
             bubble_radius,
-            padding=10
+            padding=extraction_padding
         )
         all_bubbles[question.question_id] = bubbles
     

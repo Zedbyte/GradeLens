@@ -12,7 +12,7 @@ from loguru import logger
 
 from app.pipeline.preprocess import preprocess_image
 from app.pipeline.paper_detection import detect_paper_boundary
-from app.pipeline.perspective import correct_perspective
+from app.pipeline.perspective import correct_perspective, calculate_perspective_quality, estimate_deskew_angle
 from app.pipeline.align import detect_registration_marks
 from app.pipeline.quality import assess_image_quality
 from app.templates.loader import TemplateLoader
@@ -34,6 +34,8 @@ class QualityFeedback(BaseModel):
     too_dark: bool = False
     too_bright: bool = False
     skewed: bool = False
+    too_skewed: bool = False
+    poor_perspective: bool = False
     message: str = ""
 
 
@@ -56,6 +58,7 @@ class FramePreviewResponse(BaseModel):
     blur_score: Optional[float] = None
     brightness: Optional[float] = None
     skew_angle: Optional[float] = None
+    perspective_quality: Optional[float] = None
     
     # Debug images (base64-encoded) - entire pipeline
     original_image: Optional[str] = None
@@ -190,6 +193,27 @@ async def preview_frame(request: FramePreviewRequest):
                 Position(x=float(corner[0]), y=float(corner[1]))
                 for corner in ordered_corners
             ]
+            
+            # Assess perspective quality and skew angle
+            persp_quality = calculate_perspective_quality(corners, image.shape[:2])
+            skew_deg = estimate_deskew_angle(corners)
+            response.perspective_quality = persp_quality
+            response.skew_angle = skew_deg
+            
+            # Add quality warnings for skew and perspective
+            if abs(skew_deg) > 15:
+                response.quality_feedback.too_skewed = True
+                response.quality_feedback.message = f"Paper is too skewed ({skew_deg:.0f}\u00b0) \u2014 straighten it"
+                response.quality_feedback.ready_to_scan = False
+            elif abs(skew_deg) > 8:
+                response.quality_feedback.skewed = True
+                if not response.quality_feedback.message:
+                    response.quality_feedback.message = f"Paper is skewed ({skew_deg:.0f}\u00b0) \u2014 try to align straighter"
+            
+            if persp_quality < 0.4:
+                response.quality_feedback.poor_perspective = True
+                response.quality_feedback.ready_to_scan = False
+                response.quality_feedback.message = "Paper shape is too distorted \u2014 hold camera directly above"
             
         except Exception as e:
             logger.debug(f"Paper detection failed: {e}")

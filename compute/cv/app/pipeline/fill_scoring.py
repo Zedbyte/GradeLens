@@ -41,9 +41,11 @@ def calculate_fill_ratio(
         gray = roi
     
     # Create circular mask
-    # Use a slightly smaller scoring radius than the extraction radius
-    # to avoid edge artifacts from misalignment without needing erosion
-    scoring_radius = max(3, int(radius * 0.85))
+    # Use a scoring radius close to the actual bubble radius.
+    # Previously 0.85 was too aggressive and missed half-filled bubbles
+    # that were slightly offset. 0.95 captures more of the filled area
+    # while still avoiding most edge artifacts.
+    scoring_radius = max(3, int(radius * 0.95))
     center = roi.shape[0] // 2
     mask = create_circular_mask(
         gray.shape,
@@ -71,6 +73,14 @@ def calculate_fill_ratio(
         blur_k = max(3, int(roi_dim * 0.08) | 1)  # ~8% of ROI, ensure odd
         adaptive_block = max(7, int(roi_dim * 0.25) | 1)  # ~25% of ROI, ensure odd
         
+        # Erosion kernel to strip printed circle border (~2-3px thick).
+        # Without this, the border inflates empty-bubble fill by ~8-12%,
+        # narrowing the gap between "filled" and "empty" and causing
+        # inconsistent detection.
+        border_erosion_kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (3, 3)
+        )
+        
         if mean_brightness > 200:  # Very bright image - likely unfilled bubble
             # For bright images, use stricter threshold to avoid false positives
             blurred = cv2.GaussianBlur(masked, (blur_k, blur_k), 0)
@@ -80,8 +90,9 @@ def calculate_fill_ratio(
                 255,
                 cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
             )
-            # Apply mask (no erosion needed — scoring_radius already shrunk to avoid edges)
             binary = cv2.bitwise_and(binary, binary, mask=mask)
+            # Erode to remove printed border pixels
+            binary = cv2.erode(binary, border_erosion_kernel, iterations=1)
             dark_pixels = np.sum(binary > 0)
         elif mean_brightness < 100:  # Dark image - likely filled bubble
             # For dark images, use simpler threshold
@@ -97,8 +108,9 @@ def calculate_fill_ratio(
                 blockSize=adaptive_block,
                 C=5
             )
-            # Apply mask (no erosion — scoring_radius handles edge avoidance)
             binary = cv2.bitwise_and(binary, binary, mask=mask)
+            # Erode to remove printed border pixels
+            binary = cv2.erode(binary, border_erosion_kernel, iterations=1)
             dark_pixels = np.sum(binary > 0)
     else:
         # Simple threshold
@@ -147,10 +159,15 @@ def determine_selected_answers(
     """
     Determine which answer(s) are selected based on fill ratios.
     
+    Uses baseline subtraction and relative scoring to handle thick
+    printed circle borders that inflate ALL options' fill ratios.
+    
     Logic:
-    - No bubble > fill_threshold → unanswered
-    - Multiple bubbles > ambiguous_threshold → ambiguous
-    - One clear winner → answered
+    1. Subtract baseline (min fill = border contribution) from all ratios
+    2. No option meaningfully above baseline → unanswered
+    3. Multiple options with similar net fill (close competitors) → ambiguous
+    4. Multiple bubbles > absolute ambiguous_threshold → ambiguous
+    5. One clear winner with sufficient margin → answered
     
     Args:
         fill_ratios: Dictionary of option -> fill_ratio
@@ -159,7 +176,7 @@ def determine_selected_answers(
     Returns:
         (selected_options, status, confidence)
         status: "answered", "unanswered", or "ambiguous"
-        confidence: 0.0 - 1.0 (difference between top 2 answers)
+        confidence: 0.0 - 1.0 (difference between top 2 net fills)
     """
     if not fill_ratios:
         return [], "unanswered", 0.0
@@ -167,38 +184,83 @@ def determine_selected_answers(
     fill_threshold = bubble_config.fill_threshold
     ambiguous_threshold = bubble_config.ambiguous_threshold
     
-    # Sort by fill ratio
-    sorted_options = sorted(
+    # --- Baseline subtraction ---
+    # The minimum fill across options represents the printed circle
+    # border artifact.  Subtracting it gives the "net fill" — only
+    # the ink the student actually put down.
+    baseline = min(fill_ratios.values())
+    net_ratios = {k: max(0.0, v - baseline) for k, v in fill_ratios.items()}
+    
+    # Sort by absolute fill ratio
+    sorted_abs = sorted(
         fill_ratios.items(),
         key=lambda x: x[1],
         reverse=True
     )
+    top_option, top_ratio = sorted_abs[0]
     
-    # Get top option
-    top_option, top_ratio = sorted_options[0]
+    # Sort by net fill ratio
+    sorted_net = sorted(
+        net_ratios.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+    top_net_option, top_net_val = sorted_net[0]
     
-    # Check if any bubble is filled
+    # --- Unanswered check ---
+    # Neither absolute nor net fill is meaningful
     if top_ratio < fill_threshold:
         return [], "unanswered", 0.0
     
-    # Check for multiple high-fill bubbles (ambiguous)
+    # --- Relative ambiguity detection (close competitors) ---
+    # When the 2nd-highest net fill is close to the highest, the
+    # question is ambiguous — we can't confidently pick one answer.
+    # This catches skewed scans where thick borders make all fills
+    # look similar (e.g. 21%, 9%, 25%, 27% → net 12%, 0%, 16%, 18%).
+    if len(sorted_net) >= 2 and top_net_val > 0:
+        # Minimum net fill to be considered a real competitor
+        # (must be meaningfully above zero / noise)
+        min_competitor_net = fill_threshold * 0.35
+        
+        second_net_option, second_net_val = sorted_net[1]
+        
+        if second_net_val > min_competitor_net:
+            relative_ratio = second_net_val / top_net_val
+            
+            # If 2nd option's net fill is >= 55% of the top option,
+            # the gap is too narrow to confidently pick one answer.
+            if relative_ratio > 0.55:
+                close_options = [
+                    opt for opt, val in sorted_net
+                    if val > min_competitor_net
+                    and (top_net_val == 0 or val / top_net_val > 0.45)
+                ]
+                if len(close_options) > 1:
+                    confidence = float(top_net_val - second_net_val)
+                    logger.debug(
+                        f"Ambiguous (close competitors): "
+                        f"fills={{{', '.join(f'{k}:{v:.3f}' for k, v in sorted_abs)}}}, "
+                        f"net={{{', '.join(f'{k}:{v:.3f}' for k, v in sorted_net)}}}, "
+                        f"baseline={baseline:.3f}"
+                    )
+                    return close_options, "ambiguous", confidence
+    
+    # --- Absolute ambiguity detection (existing) ---
+    # Multiple bubbles above the high absolute threshold
     high_fill_options = [
         opt for opt, ratio in fill_ratios.items()
         if ratio >= ambiguous_threshold
     ]
-    
     if len(high_fill_options) > 1:
         return high_fill_options, "ambiguous", 0.0
     
-    # Single answer selected
-    # Calculate confidence (difference between top 2)
-    if len(sorted_options) >= 2:
-        second_ratio = sorted_options[1][1]
-        confidence = float(top_ratio - second_ratio)
+    # --- Single answer selected ---
+    if len(sorted_net) >= 2:
+        confidence = float(sorted_net[0][1] - sorted_net[1][1])
     else:
-        confidence = float(top_ratio)
+        confidence = float(top_net_val)
     
-    return [top_option], "answered", confidence
+    return [top_net_option], "answered", confidence
 
 
 def score_all_questions(

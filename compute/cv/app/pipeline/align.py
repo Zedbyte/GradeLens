@@ -262,6 +262,43 @@ def apply_alignment(
     return aligned
 
 
+def _validate_alignment_transform(transform_matrix: np.ndarray) -> Tuple[bool, str]:
+    """
+    Validate that alignment transform is reasonable (no excessive rotation/scale/skew).
+    A bad transform (from poorly detected marks) will re-skew the corrected image.
+    
+    The matrix is a 2x3 affine: [[a, b, tx], [c, d, ty]]
+    For a similarity transform: a=s*cos(θ), b=-s*sin(θ), c=s*sin(θ), d=s*cos(θ)
+    """
+    a, b = transform_matrix[0, 0], transform_matrix[0, 1]
+    c, d = transform_matrix[1, 0], transform_matrix[1, 1]
+    tx, ty = transform_matrix[0, 2], transform_matrix[1, 2]
+    
+    # Check rotation angle — very strict because even 2° shifts far-column
+    # bubbles by ~73px on a 2100px-wide image (3× the bubble radius).
+    rotation_rad = np.arctan2(c, a)
+    rotation_deg = np.degrees(rotation_rad)
+    if abs(rotation_deg) > 1.0:  # More than 1° rotation is dangerous
+        return False, f"Excessive rotation: {rotation_deg:.2f}°"
+    
+    # Check scale factor
+    scale_x = np.sqrt(a**2 + c**2)
+    scale_y = np.sqrt(b**2 + d**2)
+    if not (0.97 <= scale_x <= 1.03) or not (0.97 <= scale_y <= 1.03):
+        return False, f"Excessive scale: sx={scale_x:.3f}, sy={scale_y:.3f}"
+    
+    # Check translation — keep small; large shifts indicate bad mark detection
+    if abs(tx) > 30 or abs(ty) > 40:
+        return False, f"Excessive translation: tx={tx:.1f}, ty={ty:.1f}"
+    
+    # Check skew (a*d - b*c should be close to 1 for no skew)
+    det = a * d - b * c
+    if not (0.95 <= det <= 1.05):
+        return False, f"Excessive skew: det={det:.3f}"
+    
+    return True, f"rot={rotation_deg:.2f}°, scale=({scale_x:.3f},{scale_y:.3f}), t=({tx:.1f},{ty:.1f})"
+
+
 def align_image_with_template(
     image: np.ndarray,
     template: Template,
@@ -269,6 +306,9 @@ def align_image_with_template(
 ) -> Tuple[np.ndarray, bool]:
     """
     Align image using template registration marks.
+    
+    Validates the computed transform to prevent re-skewing a correctly
+    perspective-corrected image when registration marks are poorly detected.
     
     Args:
         image: Grayscale image (after perspective correction)
@@ -292,6 +332,49 @@ def align_image_with_template(
             template.registration_marks
         )
         
+        # Count how many marks fell back to expected positions
+        expected_positions = [(m.position.x, m.position.y) for m in template.registration_marks]
+        fallback_count = sum(
+            1 for det, exp in zip(detected_marks, expected_positions)
+            if det[0] == exp[0] and det[1] == exp[1]
+        )
+        total_marks = len(template.registration_marks)
+        
+        if fallback_count > total_marks // 2:
+            logger.warning(
+                f"Alignment skipped: {fallback_count}/{total_marks} marks used fallback positions. "
+                f"Transform would be unreliable."
+            )
+            return image, False
+        
+        # "Good enough" check: if detected marks are already very close
+        # to expected positions, the perspective correction was accurate
+        # and alignment adds more risk than benefit.
+        displacements = [
+            np.sqrt((det[0] - exp[0])**2 + (det[1] - exp[1])**2)
+            for det, exp in zip(detected_marks, expected_positions)
+            if not (det[0] == exp[0] and det[1] == exp[1])  # skip fallback marks
+        ]
+        
+        if displacements:
+            mean_disp = np.mean(displacements)
+            max_disp = np.max(displacements)
+            logger.info(
+                f"Mark displacement: mean={mean_disp:.1f}px, max={max_disp:.1f}px "
+                f"({len(displacements)} real detections, {fallback_count} fallbacks)"
+            )
+            
+            # If marks are within ~half a bubble radius of expected,
+            # perspective correction was good enough — skip alignment
+            bubble_radius = 25  # typical
+            if mean_disp < bubble_radius * 0.6:  # ~15px
+                logger.info(
+                    f"Alignment skipped: marks already close to expected "
+                    f"(mean={mean_disp:.1f}px < {bubble_radius * 0.6:.0f}px threshold). "
+                    f"Perspective correction is sufficient."
+                )
+                return image, False
+        
         # Calculate transform
         transform_matrix = calculate_alignment_transform(
             detected_marks,
@@ -302,6 +385,17 @@ def align_image_with_template(
             if strict:
                 raise AlignmentError("Failed to calculate alignment transform")
             logger.warning("Alignment skipped: insufficient marks detected")
+            return image, False
+        
+        # Validate transform quality - prevent re-skewing
+        is_valid, validation_msg = _validate_alignment_transform(transform_matrix)
+        logger.info(f"Alignment transform: {validation_msg}")
+        
+        if not is_valid:
+            logger.warning(
+                f"Alignment transform rejected: {validation_msg}. "
+                f"Skipping alignment to preserve perspective correction."
+            )
             return image, False
         
         # Apply alignment

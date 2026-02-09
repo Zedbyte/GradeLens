@@ -326,8 +326,13 @@ export function LiveScanner({
       if (feedback.too_bright) {
         drawText("⚠ Too bright", "#f97316");
       }
-      if (feedback.skewed) {
+      if (feedback.too_skewed) {
+        drawText("⚠ Paper too skewed", "#ef4444");
+      } else if (feedback.skewed) {
         drawText("⚠ Paper is skewed", "#f97316");
+      }
+      if (feedback.poor_perspective) {
+        drawText("⚠ Paper too distorted", "#ef4444");
       }
       if (feedback.ready_to_scan) {
         drawText("✓ Ready to scan", "#22c55e");
