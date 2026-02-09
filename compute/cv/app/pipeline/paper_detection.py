@@ -65,13 +65,17 @@ def detect_paper_boundary(
     logger.debug(f"Paper detection on {gray.shape} image (scale={scale:.2f})")
     
     # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Kernel size proportional to image size for resolution-independence
+    blur_k = max(3, int(max(gray.shape[:2]) * 0.007) | 1)  # ~0.7% of largest dim, ensure odd
+    blurred = cv2.GaussianBlur(gray, (blur_k, blur_k), 0)
     
     # Canny edge detection
     edges = cv2.Canny(blurred, 50, 150)
     
     # Dilate edges to close gaps
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    # Kernel size proportional to image size
+    dilate_k = max(3, int(max(gray.shape[:2]) * 0.007) | 1)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (dilate_k, dilate_k))
     dilated = cv2.dilate(edges, kernel, iterations=2)
     
     # Find contours

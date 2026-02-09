@@ -41,11 +41,14 @@ def calculate_fill_ratio(
         gray = roi
     
     # Create circular mask
+    # Use a slightly smaller scoring radius than the extraction radius
+    # to avoid edge artifacts from misalignment without needing erosion
+    scoring_radius = max(3, int(radius * 0.85))
     center = roi.shape[0] // 2
     mask = create_circular_mask(
         gray.shape,
         (center, center),
-        radius
+        scoring_radius
     )
     
     # Apply mask
@@ -63,40 +66,39 @@ def calculate_fill_ratio(
         circle_area = masked[mask > 0]
         mean_brightness = np.mean(circle_area) if len(circle_area) > 0 else 128
         
+        # Compute resolution-adaptive kernel sizes
+        roi_dim = max(roi.shape[:2])
+        blur_k = max(3, int(roi_dim * 0.08) | 1)  # ~8% of ROI, ensure odd
+        adaptive_block = max(7, int(roi_dim * 0.25) | 1)  # ~25% of ROI, ensure odd
+        
         if mean_brightness > 200:  # Very bright image - likely unfilled bubble
             # For bright images, use stricter threshold to avoid false positives
-            # Apply slight blur to reduce noise before thresholding
-            blurred = cv2.GaussianBlur(masked, (5, 5), 0)
+            blurred = cv2.GaussianBlur(masked, (blur_k, blur_k), 0)
             _, binary = cv2.threshold(
                 blurred,
                 0,
                 255,
                 cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
             )
-            # Apply mask and erode slightly to remove edge artifacts
+            # Apply mask (no erosion needed — scoring_radius already shrunk to avoid edges)
             binary = cv2.bitwise_and(binary, binary, mask=mask)
-            kernel = np.ones((3, 3), np.uint8)
-            binary = cv2.erode(binary, kernel, iterations=1)
             dark_pixels = np.sum(binary > 0)
         elif mean_brightness < 100:  # Dark image - likely filled bubble
             # For dark images, use simpler threshold
             dark_pixels = np.sum((circle_area < dark_threshold))
         else:
             # Adaptive threshold for normal lighting
-            # Apply blur to reduce noise
-            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            blurred = cv2.GaussianBlur(gray, (blur_k, blur_k), 0)
             binary = cv2.adaptiveThreshold(
                 blurred,
                 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV,
-                blockSize=15,  # Larger block size for better local analysis
-                C=5  # Higher C to reduce noise
+                blockSize=adaptive_block,
+                C=5
             )
+            # Apply mask (no erosion — scoring_radius handles edge avoidance)
             binary = cv2.bitwise_and(binary, binary, mask=mask)
-            # Erode to remove edge artifacts
-            kernel = np.ones((3, 3), np.uint8)
-            binary = cv2.erode(binary, kernel, iterations=1)
             dark_pixels = np.sum(binary > 0)
     else:
         # Simple threshold

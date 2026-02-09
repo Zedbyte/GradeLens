@@ -64,6 +64,20 @@ def preprocess_image(
     
     logger.debug(f"Processing image array: {image.shape}")
     
+    # Enforce minimum resolution for reliable OMR processing
+    # Images below this threshold produce unreliable results when upscaled to canonical size
+    MIN_DIMENSION = 600
+    h, w = image.shape[:2]
+    if max(h, w) < MIN_DIMENSION:
+        scale_up = MIN_DIMENSION / max(h, w)
+        new_w = int(w * scale_up)
+        new_h = int(h * scale_up)
+        image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+        logger.warning(
+            f"Image too small ({w}x{h}), upscaled to {new_w}x{new_h} "
+            f"(scale={scale_up:.2f}x) for reliable processing"
+        )
+    
     # Convert to grayscale
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -131,11 +145,14 @@ def preprocess_image(
         processed = binary
     elif binarization == "adaptive":
         # Adaptive Gaussian threshold - better for uneven lighting
+        # blockSize must be odd and proportional to image size for resolution-independence
+        img_dim = max(enhanced.shape[:2])
+        adaptive_block = max(11, int(img_dim * 0.03) | 1)  # ~3% of image, min 11, ensure odd
         binary = cv2.adaptiveThreshold(
             enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY, blockSize=21, C=10
+            cv2.THRESH_BINARY, blockSize=adaptive_block, C=10
         )
-        logger.debug("Adaptive Gaussian threshold applied (blockSize=21, C=10)")
+        logger.debug(f"Adaptive Gaussian threshold applied (blockSize={adaptive_block}, C=10)")
         processed = binary
     else:  # "none" - just use enhanced (grayscale)
         # Light Gaussian blur for noise reduction only

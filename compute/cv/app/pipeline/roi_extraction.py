@@ -21,7 +21,7 @@ def extract_bubble_roi(
     center_x: int,
     center_y: int,
     radius: int,
-    padding: int = 5
+    padding: int = 10
 ) -> np.ndarray:
     """
     Extract circular bubble ROI from image.
@@ -118,7 +118,7 @@ def extract_all_bubbles(
             image,
             question,
             bubble_radius,
-            padding=5
+            padding=10
         )
         all_bubbles[question.question_id] = bubbles
     

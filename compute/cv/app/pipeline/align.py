@@ -20,7 +20,7 @@ class AlignmentError(Exception):
 def detect_registration_marks(
     image: np.ndarray,
     expected_marks: List[RegistrationMark],
-    search_radius: int = 50,
+    search_radius: Optional[int] = None,
     tolerance: float = 0.3,
     adaptive_search: bool = True
 ) -> List[Tuple[int, int]]:
@@ -30,7 +30,8 @@ def detect_registration_marks(
     Args:
         image: Grayscale image (after perspective correction)
         expected_marks: List of expected registration marks from template
-        search_radius: Radius around expected position to search
+        search_radius: Radius around expected position to search.
+                        If None, auto-calculated as ~2.4% of image diagonal.
         tolerance: How far detected mark can be from expected (as ratio of search_radius)
         adaptive_search: Use larger search radius for marks further from image center
         
@@ -43,6 +44,14 @@ def detect_registration_marks(
     detected_positions = []
     img_height, img_width = image.shape[:2]
     img_center_y = img_height / 2
+    
+    # Auto-calculate search radius proportional to image size for resolution-independence
+    # For canonical 2100x2970, diagonal ≈ 3637 → 2.4% ≈ 87px (generous enough)
+    # For small images like 600x800, diagonal ≈ 1000 → 2.4% ≈ 24px
+    if search_radius is None:
+        img_diagonal = np.sqrt(img_width**2 + img_height**2)
+        search_radius = max(20, int(img_diagonal * 0.024))
+        logger.debug(f"Auto search_radius={search_radius}px for {img_width}x{img_height} image")
     
     for mark in expected_marks:
         expected_x = mark.position.x
@@ -277,11 +286,10 @@ def align_image_with_template(
         return image, False
     
     try:
-        # Detect marks
+        # Detect marks (search_radius auto-calculated based on image size)
         detected_marks = detect_registration_marks(
             image,
-            template.registration_marks,
-            search_radius=50
+            template.registration_marks
         )
         
         # Calculate transform

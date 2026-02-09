@@ -22,9 +22,9 @@ interface LiveScannerProps {
   onCapture: (imageData: string) => void;
 }
 
-const VIDEO_CONSTRAINTS = {
-  width: { ideal: 720 },
-  height: { ideal: 960 },
+const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  width: { min: 640, ideal: 1280, max: 1920 },
+  height: { min: 480, ideal: 1920, max: 2560 },
   facingMode: "environment", // Use rear camera on mobile
 };
 
@@ -348,7 +348,14 @@ export function LiveScanner({
       if (!webcamRef.current || !template) return;
 
       try {
-        const imageSrc = webcamRef.current.getScreenshot();
+        // Capture at native video resolution for consistent quality across devices
+        const video = webcamRef.current.video;
+        const screenshotWidth = video?.videoWidth || 1280;
+        const screenshotHeight = video?.videoHeight || 1920;
+        const imageSrc = webcamRef.current.getScreenshot({
+          width: screenshotWidth,
+          height: screenshotHeight,
+        });
         if (!imageSrc) return;
 
         // Extract base64 data
@@ -378,8 +385,14 @@ export function LiveScanner({
   const handleCapture = useCallback(() => {
     if (!webcamRef.current || !selectedExam || !selectedStudent) return;
 
-    // Capture at actual video resolution for best quality
-    const imageSrc = webcamRef.current.getScreenshot();
+    // Capture at native video resolution for best quality across all devices
+    const video = webcamRef.current.video;
+    const screenshotWidth = video?.videoWidth || 1280;
+    const screenshotHeight = video?.videoHeight || 1920;
+    const imageSrc = webcamRef.current.getScreenshot({
+      width: screenshotWidth,
+      height: screenshotHeight,
+    });
     if (imageSrc) {
       // Extract base64 data without the data URL prefix
       const base64Data = imageSrc.replace(/^data:image\/\w+;base64,/, "");

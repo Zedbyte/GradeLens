@@ -176,7 +176,8 @@ async def preview_frame(request: FramePreviewRequest):
         # Grayscale/binary can make inner content too prominent
         try:
             # Use original image directly - best for finding paper edges vs background
-            corners = detect_paper_boundary(image, min_area_ratio=0.4, max_area_ratio=0.95)
+            # Lower min_area_ratio (0.2) for more forgiving live feedback during positioning
+            corners = detect_paper_boundary(image, min_area_ratio=0.2, max_area_ratio=0.95)
             response.paper_detected = True
             
             # Order corners consistently: TL, TR, BR, BL
@@ -196,9 +197,18 @@ async def preview_frame(request: FramePreviewRequest):
             return response
         
         # Step 4: Correct perspective
+        # IMPORTANT: Use original image for perspective correction since paper_corners
+        # are in original image space. preprocessed may be upscaled by preprocess_image
+        # (MIN_DIMENSION enforcement), creating a coordinate mismatch.
         try:
             target_size = (template.canonical_size.width, template.canonical_size.height)
-            corrected = correct_perspective(preprocessed, corners, target_size)
+            corrected = correct_perspective(image, corners, target_size)
+            
+            # Convert to grayscale for mark detection (corrected is BGR from original)
+            if len(corrected.shape) == 3:
+                corrected_gray = cv2.cvtColor(corrected, cv2.COLOR_BGR2GRAY)
+            else:
+                corrected_gray = corrected
             
             # Encode warped image for frontend debugging
             _, warped_buffer = cv2.imencode('.jpg', corrected)
@@ -212,7 +222,7 @@ async def preview_frame(request: FramePreviewRequest):
         # Step 5: Detect registration marks
         try:
             marks = detect_registration_marks(
-                corrected,
+                corrected_gray,
                 template.registration_marks,
                 adaptive_search=True
             )
