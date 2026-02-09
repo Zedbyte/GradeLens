@@ -11,6 +11,7 @@ import {
   IconCheck
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { previewFrameApi } from "../api/scans.api";
 import type { Template } from "@/types/template.types";
 import type { FramePreviewResponse } from "@packages/types/scans/scans.types";
@@ -42,6 +43,8 @@ export function LiveScanner({
   const [error, setError] = useState<string>("");
   const [preview, setPreview] = useState<FramePreviewResponse | null>(null);
   const [showDebugImages, setShowDebugImages] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [captureCount, setCaptureCount] = useState(0);
 
   // Stop preview when component unmounts
   useEffect(() => {
@@ -382,23 +385,56 @@ export function LiveScanner({
     }
   }, [isReady, template, startPreview, stopPreview]);
 
-  const handleCapture = useCallback(() => {
-    if (!webcamRef.current || !selectedExam || !selectedStudent) return;
+  const handleCapture = useCallback(async () => {
+    if (!webcamRef.current || !selectedExam || !selectedStudent || isCapturing) return;
 
-    // Capture at native video resolution for best quality across all devices
-    const video = webcamRef.current.video;
-    const screenshotWidth = video?.videoWidth || 1280;
-    const screenshotHeight = video?.videoHeight || 1920;
-    const imageSrc = webcamRef.current.getScreenshot({
-      width: screenshotWidth,
-      height: screenshotHeight,
-    });
-    if (imageSrc) {
-      // Extract base64 data without the data URL prefix
-      const base64Data = imageSrc.replace(/^data:image\/\w+;base64,/, "");
-      onCapture(base64Data);
+    setIsCapturing(true);
+    
+    try {
+      // Capture at native video resolution for best quality across all devices
+      const video = webcamRef.current.video;
+      const screenshotWidth = video?.videoWidth || 1280;
+      const screenshotHeight = video?.videoHeight || 1920;
+      const imageSrc = webcamRef.current.getScreenshot({
+        width: screenshotWidth,
+        height: screenshotHeight,
+      });
+      
+      if (imageSrc) {
+        // Show immediate feedback
+        toast.info("Capturing scan...", {
+          description: "Processing your scan",
+          duration: 2000,
+        });
+        
+        // Extract base64 data without the data URL prefix
+        const base64Data = imageSrc.replace(/^data:image\/\w+;base64,/, "");
+        
+        // Call onCapture asynchronously
+        await onCapture(base64Data);
+        
+        // Show success feedback
+        setCaptureCount(prev => prev + 1);
+        toast.success("Scan captured!", {
+          description: "Added to queue for processing",
+          duration: 2000,
+        });
+        
+        // Brief delay to show feedback before allowing next capture
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    } catch (err) {
+      console.error("Capture error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to capture scan";
+      setError(errorMessage);
+      toast.error("Capture failed", {
+        description: errorMessage,
+        duration: 3000,
+      });
+    } finally {
+      setIsCapturing(false);
     }
-  }, [selectedExam, selectedStudent, onCapture]);
+  }, [selectedExam, selectedStudent, onCapture, isCapturing]);
 
   const handleUserMedia = useCallback(() => {
     setIsReady(true);
@@ -414,7 +450,7 @@ export function LiveScanner({
     console.error("Camera error:", err);
   }, []);
 
-  const canCapture = selectedExam && selectedStudent && isReady;
+  const canCapture = selectedExam && selectedStudent && isReady && !isCapturing;
 
   const alertMessage = (() => {
     if (!selectedExam) {
@@ -506,8 +542,15 @@ export function LiveScanner({
           className="absolute inset-0 h-full w-full pointer-events-none"
         />
 
+        {/* Capture Flash Effect */}
+        {isCapturing && (
+          <div className="absolute inset-0 bg-white animate-pulse pointer-events-none" 
+               style={{ animationDuration: '300ms', animationIterationCount: '1' }} 
+          />
+        )}
+
         {/* Ready indicator */}
-        {preview?.quality_feedback?.ready_to_scan && (
+        {preview?.quality_feedback?.ready_to_scan && !isCapturing && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="rounded-full bg-green-500 p-4 shadow-lg">
               <IconCheck className="h-12 w-12 text-white" />
@@ -522,11 +565,20 @@ export function LiveScanner({
           type="button"
           onClick={handleCapture}
           disabled={!canCapture}
-          className="flex-1"
+          className="flex-1 relative"
           size="lg"
         >
-          <IconCapture className="mr-2 h-5 w-5" />
-          Capture Scan
+          {isCapturing ? (
+            <>
+              <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Capturing...
+            </>
+          ) : (
+            <>
+              <IconCapture className="mr-2 h-5 w-5" />
+              Capture Scan {captureCount > 0 && `(${captureCount})`}
+            </>
+          )}
         </Button>
         
         <Button

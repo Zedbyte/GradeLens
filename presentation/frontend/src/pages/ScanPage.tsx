@@ -164,9 +164,6 @@ export function ScanPage() {
 
       // Select the newly uploaded scan (will trigger polling)
       selectScan(scanId);
-      
-      // Switch to upload tab to show the queue
-      setActiveTab("upload");
 
       // Reset redo flag after upload
       setRedoExisting(false);
