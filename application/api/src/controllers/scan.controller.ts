@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { v4 as uuid } from "uuid";
 import path from "path";
 import fs from "fs";
-import { createScan, listScans, getScan, updateScanAnswers, markScanAsReviewed } from "../services/scan.service.ts";
+import { createScan, listScans, getScan, updateScanAnswers, markScanAsReviewed, deleteScan } from "../services/scan.service.ts";
 import { ExamModel } from "../models/Exam.ts";
 
 const STORAGE_DIR = process.env.SCAN_STORAGE_DIR || "/data/scans";
@@ -177,6 +177,35 @@ export async function markAsReviewedController(req: Request, res: Response) {
     }
     res.status(500).json({ 
       error: error instanceof Error ? error.message : "Failed to mark scan as reviewed" 
+    });
+  }
+}
+
+export async function deleteScanController(req: Request, res: Response) {
+  try {
+    const scan_id = Array.isArray(req.params.scan_id) ? req.params.scan_id[0] : req.params.scan_id;
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
+
+    // Verify scan exists and user has access
+    const existingScan = await getScan(scan_id, userId, userRole);
+    if (!existingScan) {
+      return res.status(404).json({ error: "Scan not found" });
+    }
+
+    await deleteScan(scan_id, userId, userRole);
+
+    res.json({ message: "Scan deleted successfully", scan_id });
+  } catch (error) {
+    console.error("Delete scan error:", error);
+    if (error instanceof Error && error.message.includes("not found")) {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error instanceof Error && error.message.includes("Access denied")) {
+      return res.status(403).json({ error: error.message });
+    }
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Failed to delete scan" 
     });
   }
 }

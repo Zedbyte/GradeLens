@@ -16,6 +16,7 @@ export function useScans() {
   const uploadScan = useScansStore((state) => state.uploadScan);
   const updateScanAnswers = useScansStore((state) => state.updateScanAnswers);
   const markScanAsReviewed = useScansStore((state) => state.markScanAsReviewed);
+  const deleteScan = useScansStore((state) => state.deleteScan);
   const refreshSelectedScan = useScansStore((state) => state.refreshSelectedScan);
 
   return {
@@ -32,6 +33,7 @@ export function useScans() {
     uploadScan,
     updateScanAnswers,
     markScanAsReviewed,
+    deleteScan,
     refreshSelectedScan,
   };
 }

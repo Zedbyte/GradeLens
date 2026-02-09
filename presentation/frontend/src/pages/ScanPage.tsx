@@ -38,7 +38,8 @@ export function ScanPage() {
     selectedScanId,
     loadScans, 
     selectScan,
-    uploadScan 
+    uploadScan,
+    deleteScan
   } = useScans();
 
   // Detect duplicate scans
@@ -329,6 +330,11 @@ export function ScanPage() {
             scans={scans}
             selectedScanId={selectedScanId || undefined}
             onSelect={selectScan}
+            onDelete={(scanId) => {
+              deleteScan(scanId).catch((err) => {
+                console.error("Failed to delete scan:", err);
+              });
+            }}
             exams={exams}
             students={students}
             showProfileLink={true}
@@ -340,6 +346,10 @@ export function ScanPage() {
           <ScanDetails
             onSave={handleSaveScan}
             onRedoScan={handleRedoScan}
+            onDelete={() => {
+              // Refresh scans after delete
+              loadScans();
+            }}
             exams={exams}
             students={students}
           />

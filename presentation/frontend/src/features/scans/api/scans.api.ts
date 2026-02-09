@@ -60,6 +60,11 @@ export const markScanAsReviewedApi = async (
   return data;
 };
 
+export const deleteScanApi = async (scanId: string): Promise<{ message: string; scan_id: string }> => {
+  const { data } = await api.delete(`/scans/${scanId}`);
+  return data;
+};
+
 export const previewFrameApi = async (
   payload: FramePreviewRequest
 ): Promise<FramePreviewResponse> => {

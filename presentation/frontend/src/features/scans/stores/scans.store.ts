@@ -5,7 +5,8 @@ import {
   fetchScanApi, 
   uploadScanApi, 
   updateScanAnswersApi,
-  markScanAsReviewedApi 
+  markScanAsReviewedApi,
+  deleteScanApi
 } from "../api/scans.api";
 import type { 
   Scan, 
@@ -33,6 +34,7 @@ type ScansState = {
   uploadScan: (payload: UploadScanRequest) => Promise<string>; // Returns scan_id
   updateScanAnswers: (scanId: string, payload: UpdateScanAnswersRequest) => Promise<void>;
   markScanAsReviewed: (scanId: string, reviewNotes?: string) => Promise<void>;
+  deleteScan: (scanId: string) => Promise<void>;
   refreshSelectedScan: () => Promise<void>;
   
   // Internal polling methods
@@ -158,6 +160,27 @@ export const useScansStore = create<ScansState>((set, get) => ({
       const errorMessage = err instanceof Error ? err.message : "Failed to mark scan as reviewed";
       set({ error: errorMessage });
       console.error("Failed to mark scan as reviewed:", err);
+      throw err;
+    }
+  },
+
+  // Delete scan
+  deleteScan: async (scanId: string) => {
+    try {
+      await deleteScanApi(scanId);
+      
+      // If the deleted scan was selected, deselect it
+      const state = get();
+      if (state.selectedScanId === scanId) {
+        get().deselectScan();
+      }
+      
+      // Refresh the scans list
+      await get().loadScans();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete scan";
+      set({ error: errorMessage });
+      console.error("Failed to delete scan:", err);
       throw err;
     }
   },

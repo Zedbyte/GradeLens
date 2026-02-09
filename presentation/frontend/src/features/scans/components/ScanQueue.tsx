@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { IconCheck, IconClock, IconAlertCircle } from "@tabler/icons-react";
+import { IconCheck, IconClock, IconAlertCircle, IconTrash } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import type { Scan } from "@packages/types/scans/scans.types";
 import type { Exam } from "@/features/exams/types/exams.types";
 import type { Student } from "@/features/students/types/students.types";
@@ -9,6 +10,7 @@ interface ScanQueueProps {
   scans: Scan[];
   selectedScanId?: string;
   onSelect: (id: string) => void;
+  onDelete?: (id: string) => void;
   exams: Exam[];
   students: Student[];
   showProfileLink?: boolean;
@@ -18,6 +20,7 @@ export function ScanQueue({
   scans,
   selectedScanId,
   onSelect,
+  onDelete,
   exams,
   students,
   showProfileLink = false,
@@ -74,7 +77,31 @@ export function ScanQueue({
                     {scan.status === 'outdated' && <span className="ml-1 text-orange-600 font-medium">(Outdated)</span>}
                   </p>
                 </div>
-                <div className="shrink-0">
+                <div className="shrink-0 flex items-center gap-1">
+                  {onDelete && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('Are you sure you want to delete this scan?')) {
+                          Promise.resolve(onDelete(scan.scan_id))
+                            .then(() => {
+                              toast.success("Scan deleted", {
+                                description: "The scan has been successfully deleted.",
+                              });
+                            })
+                            .catch((err) => {
+                              toast.error("Failed to delete", {
+                                description: err instanceof Error ? err.message : "Failed to delete scan",
+                              });
+                            });
+                        }
+                      }}
+                      className="p-1 hover:bg-destructive/10 rounded transition-colors"
+                      title="Delete scan"
+                    >
+                      <IconTrash className="h-3.5 w-3.5 text-destructive" />
+                    </button>
+                  )}
                   {scan.status === 'graded' && <IconCheck className="h-4 w-4 text-green-500" />}
                   {scan.status === 'processing' && (
                     <IconClock className="h-4 w-4 animate-pulse text-primary" />

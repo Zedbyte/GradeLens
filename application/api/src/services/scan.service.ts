@@ -264,3 +264,25 @@ export async function markScanAsReviewed(
 
   return scan;
 }
+
+export async function deleteScan(scan_id: string, userId?: string, userRole?: string) {
+  const scan = await ScanModel.findOne({ scan_id });
+  
+  if (!scan) {
+    throw new Error(`Scan not found: ${scan_id}`);
+  }
+
+  // For teachers, verify the scan's exam belongs to them
+  if (userRole === "teacher" && userId) {
+    if (scan.exam_id) {
+      const exam = await ExamModel.findById(scan.exam_id).select("created_by").lean();
+      if (!exam || exam.created_by !== userId) {
+        throw new Error("Access denied: You can only delete scans from your own exams");
+      }
+    }
+  }
+
+  await ScanModel.deleteOne({ scan_id });
+  
+  return { success: true, scan_id };
+}

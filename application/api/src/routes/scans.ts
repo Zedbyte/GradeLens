@@ -5,7 +5,8 @@ import {
   getScans,
   getScanById,
   updateScanAnswersController,
-  markAsReviewedController
+  markAsReviewedController,
+  deleteScanController
 } from "../controllers/scan.controller.ts";
 import { authenticate } from "../middlewares/auth.middleware.ts";
 import { API_ROUTES } from "../constants/routes.ts";
@@ -21,5 +22,6 @@ router.get(API_ROUTES.SCANS.BASE, getScans);
 router.get(`${API_ROUTES.SCANS.BASE}/:scan_id`, getScanById);
 router.patch(`${API_ROUTES.SCANS.BASE}/:scan_id/answers`, updateScanAnswersController);
 router.patch(`${API_ROUTES.SCANS.BASE}/:scan_id/reviewed`, markAsReviewedController);
+router.delete(`${API_ROUTES.SCANS.BASE}/:scan_id`, deleteScanController);
 
 export default router;

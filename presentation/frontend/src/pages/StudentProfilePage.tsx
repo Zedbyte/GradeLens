@@ -14,7 +14,7 @@ export default function StudentProfilePage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { students, loadStudents } = useStudents();
-    const { scans, selectedScanId, selectScan, loadScans } = useScans();
+    const { scans, selectedScanId, selectScan, loadScans, deleteScan } = useScans();
     const { exams, loadExams } = useExams();
     const { sections, loadSections } = useSections();
 
@@ -151,6 +151,11 @@ export default function StudentProfilePage() {
             <ScanQueue 
                 scans={studentScans}
                 onSelect={selectScan}
+                onDelete={(scanId) => {
+                  deleteScan(scanId).catch((err) => {
+                    console.error("Failed to delete scan:", err);
+                  });
+                }}
                 selectedScanId={selectedScanId || undefined}
                 exams={exams}
                 students={students}
@@ -160,6 +165,10 @@ export default function StudentProfilePage() {
             {/* Right Column - Scan Details */}
             <div className="flex-1 min-w-0">
             <ScanDetails 
+                onDelete={() => {
+                  // Refresh scans after delete
+                  loadScans();
+                }}
                 exams={exams}
                 students={students}
             />

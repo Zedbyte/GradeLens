@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { IconCheck, IconClock, IconAlertCircle, IconInfoCircle } from "@tabler/icons-react";
+import { IconCheck, IconClock, IconAlertCircle, IconInfoCircle, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useScans } from "../hooks/useScans";
 import { EditAnswersDialog } from "./EditAnswersDialog";
@@ -16,12 +16,13 @@ import type { Student } from "@/features/students";
 interface ScanDetailsProps {
   onSave?: () => void;
   onRedoScan?: () => void;
+  onDelete?: () => void;
   className?: string;
   exams?: Exam[];
   students?: Student[];
 }
 
-export function ScanDetails({ onSave, onRedoScan, className, exams, students }: ScanDetailsProps) {
+export function ScanDetails({ onSave, onRedoScan, onDelete, className, exams, students }: ScanDetailsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
@@ -29,9 +30,10 @@ export function ScanDetails({ onSave, onRedoScan, className, exams, students }: 
   const [editedAnswers, setEditedAnswers] = useState<Record<number, string[]>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingReviewed, setIsMarkingReviewed] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Get scan from Zustand store
-  const { selectedScan, updateScanAnswers, markScanAsReviewed, isPollingRequest, error } = useScans();
+  const { selectedScan, updateScanAnswers, markScanAsReviewed, deleteScan, isPollingRequest, error } = useScans();
 
   const lastErrorRef = useRef<string | null>(null);
 
@@ -172,6 +174,35 @@ export function ScanDetails({ onSave, onRedoScan, className, exams, students }: 
     if (onRedoScan) onRedoScan();
   };
 
+  // Handle delete scan
+  const handleDeleteClick = async () => {
+    if (!selectedScan) return;
+
+    // Confirm deletion
+    if (!window.confirm(`Are you sure you want to delete this scan? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteScan(selectedScan.scan_id);
+      
+      toast.success("Scan deleted", {
+        description: "The scan has been successfully deleted.",
+      });
+
+      // Call parent handler if provided
+      if (onDelete) onDelete();
+    } catch (error) {
+      console.error("Failed to delete scan:", error);
+      toast.error("Failed to delete", {
+        description: error instanceof Error ? error.message : "Failed to delete scan",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!selectedScan) {
     return (
       <Card className={cn(
@@ -300,9 +331,26 @@ export function ScanDetails({ onSave, onRedoScan, className, exams, students }: 
       />
 
       {/* Fixed Action Buttons */}
-      {(onSave || onRedoScan) && (
+      {(onSave || onRedoScan || onDelete) && (
         <CardContent className="pt-3 pb-4 border-t shrink-0">
           <div className="flex gap-2">
+            {onDelete && (
+              <Button
+                onClick={handleDeleteClick}
+                variant="outline"
+                disabled={isDeleting}
+                className="border-destructive text-destructive hover:bg-destructive hover:text-primary-foreground"
+              >
+                {isDeleting ? (
+                  "Deleting..."
+                ) : (
+                  <>
+                    <IconTrash className="h-4 w-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            )}
             {onRedoScan && (
               <Button
                 onClick={handleRedoClick}
