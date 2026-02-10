@@ -34,58 +34,83 @@ import {
 
 const navMain = [
   {
-    title: "Dashboard",
-    url: ROUTES.DASHBOARD,
-    icon: IconDashboard,
-    roles: ["teacher", "admin"], // Available to both
+    group: "Overview",
+    items: [
+      {
+        title: "Dashboard",
+        url: ROUTES.DASHBOARD,
+        icon: IconDashboard,
+        roles: ["teacher", "admin"],
+      },
+    ]
   },
   {
-    title: "Scans", //Page to scan/upload student answer sheets
-    url: ROUTES.SCAN,
-    icon: IconCamera,
-    roles: ["teacher", "admin"],
+    group: "Assessment",
+    items: [
+      {
+        title: "Scans",
+        url: ROUTES.SCAN,
+        icon: IconCamera,
+        roles: ["teacher", "admin"],
+      },
+      {
+        title: "Exams",
+        url: ROUTES.EXAMS,
+        icon: IconWallpaper,
+        roles: ["teacher", "admin"],
+      },
+    ]
   },
   {
-    title: "Exams", //Page where we can create exams and assign them to classes, and answer keys
-    url: ROUTES.EXAMS,
-    icon: IconWallpaper,
-    roles: ["teacher", "admin"],
+    group: "Management",
+    items: [
+      {
+        title: "Students",
+        url: ROUTES.STUDENTS,
+        icon: IconUser,
+        roles: ["teacher", "admin"],
+      },
+      {
+        title: "Classes",
+        url: ROUTES.CLASSES,
+        icon: IconCategoryPlus,
+        roles: ["admin"],
+      },
+      {
+        title: "Grades",
+        url: ROUTES.GRADES,
+        icon: IconSchool,
+        roles: ["admin"],
+      },
+      {
+        title: "Sections",
+        url: ROUTES.SECTIONS,
+        icon: IconCategory,
+        roles: ["admin"],
+      },
+    ]
   },
   {
-    title: "Students", //Create accounts, and students.
-    url: ROUTES.STUDENTS,
-    icon: IconUser,
-    roles: ["teacher", "admin"], // Both can view
+    group: "Insights",
+    items: [
+      {
+        title: "Analytics",
+        url: ROUTES.REPORTS,
+        icon: IconFileAnalytics,
+        roles: ["teacher", "admin"],
+      },
+    ]
   },
   {
-    title: "Classes", //Create classes and assign students to classes
-    url: ROUTES.CLASSES,
-    icon: IconCategoryPlus,
-    roles: ["admin"], // Admin only
-  },
-  {
-    title: "Grades", //Manage grade levels
-    url: ROUTES.GRADES,
-    icon: IconSchool,
-    roles: ["admin"], // Admin only
-  },
-  {
-    title: "Sections", //Manage sections
-    url: ROUTES.SECTIONS,
-    icon: IconCategory,
-    roles: ["admin"], // Admin only
-  },
-  {
-    title: "Analytics", //This includes per student summary, mean-pl etc.
-    url: ROUTES.REPORTS,
-    icon: IconFileAnalytics,
-    roles: ["teacher", "admin"],
-  },
-  {
-    title: "Accounts", //Create accounts, and students.
-    url: ROUTES.ACCOUNTS,
-    icon: IconUser,
-    roles: ["admin"], // Admin only
+    group: "System",
+    items: [
+      {
+        title: "Accounts",
+        url: ROUTES.ACCOUNTS,
+        icon: IconUser,
+        roles: ["admin"],
+      },
+    ]
   },
 ]
 
@@ -126,7 +151,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Filter navigation items based on user role
   const filteredNavMain = React.useMemo(() => {
     if (!user) return [];
-    return navMain.filter(item => item.roles.includes(user.role));
+    return navMain.map(group => ({
+      group: group.group,
+      items: group.items.filter(item => item.roles.includes(user.role))
+    })).filter(group => group.items.length > 0); // Remove empty groups
   }, [user]);
 
   return (
