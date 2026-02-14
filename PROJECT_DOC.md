@@ -1,4 +1,4 @@
-# GradeLens - Comprehensive Project Documentation
+# CICADA - Comprehensive Project Documentation
 ## Full-Stack OMR Grading Application
 
 
@@ -13,7 +13,7 @@
 ## Executive Summary
 
 
-GradeLens is an Optical Mark Recognition (OMR) system designed for educational institutions to automate answer sheet grading. The system features a sophisticated architecture combining modern web technologies (MERN stack) with advanced computer vision capabilities (Python/OpenCV), deployed as a scalable microservices solution.
+CICADA is an Optical Mark Recognition (OMR) system designed for educational institutions to automate answer sheet grading. The system features a sophisticated architecture combining modern web technologies (MERN stack) with advanced computer vision capabilities (Python/OpenCV), deployed as a scalable microservices solution.
 
 
 ### Key Achievements
@@ -735,7 +735,7 @@ class TemplateLoader:
 - `form_A` - Standard 60-question, 4-choice layout
 - `form_B` - Alternative 60-question layout
 - `form_60q` - Custom 60-question form
-- `gl_form_60` - GradeLens proprietary form
+- `gl_form_60` - CICADA proprietary form
 
 
 **Template JSON Structure:**
@@ -1880,7 +1880,7 @@ Sheet 4: Summary
 ## 15. Conclusion
 
 
-GradeLens represents a comprehensive, production-ready OMR grading system built from the ground up in 21 days. The system demonstrates:
+CICADA represents a comprehensive, production-ready OMR grading system built from the ground up in 21 days. The system demonstrates:
 
 
 1. **Technical Excellence:** Clean architecture, modern stack, best practices
@@ -1974,7 +1974,7 @@ scikit-image>=0.22
 
 
 ```
-GradeLens/
+CICADA/
 ├── application/api/          # Node.js Backend (5,500 LOC)
 │   ├── src/
 │   │   ├── controllers/      # 10 controllers
