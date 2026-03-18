@@ -83,9 +83,10 @@ export default function LandingPage() {
       {/* --- HEADER --- */}
       <header className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
         <div className="flex items-center gap-3">
-          <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-             <span className="absolute h-7 w-7 rounded-full border-[3px] border-cyan-500/30" />
-             <span className="absolute h-4 w-4 rounded-full bg-cyan-600" />
+           <div className="relative grid h-12 w-12 place-items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <span className="absolute h-9 w-9 rounded-full border-4 border-cyan-500/70" />
+            <span className="absolute h-5 w-5 rounded-full bg-cyan-800" />
+            <span className="absolute h-2 w-2 -translate-x-1 translate-y-0.5 rounded-full bg-white/90" />
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Sora', sans-serif" }}>
             GradeLens
