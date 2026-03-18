@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "@/pages/LoginPage";
+import LandingPage from "@/pages/LandingPage";
 import DashboardPage from "@/pages/DashboardPage";
 import StudentsPage from "@/pages/StudentsPage";
 import StudentProfilePage from "@/pages/StudentProfilePage";
@@ -15,11 +16,17 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { ROUTES } from "@/lib/constants";
 import { ScanPage } from "@/pages/ScanPage";
 import AccountsPage from "@/pages/AccountsPage";
+import NotFoundPage from "@/pages/NotFoundPage";
 
 export function AppRouter() {
     return (
         <BrowserRouter>
         <Routes>
+            <Route
+            path={ROUTES.HOME}
+            element={<LandingPage />}
+            />
+
             <Route
             path={ROUTES.LOGIN}
             element={
@@ -137,6 +144,11 @@ export function AppRouter() {
                 </AppLayout>
                 </AdminRoute>
             }
+            />
+
+            <Route
+            path="*"
+            element={<NotFoundPage />}
             />
         </Routes>
         </BrowserRouter>

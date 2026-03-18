@@ -18,6 +18,7 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/constants";
 import { Loader2, ArrowRight, Scan } from "lucide-react";
 import { useState } from "react";
 
@@ -38,7 +39,7 @@ export function LoginForm() {
     setError(null);
     try {
       await login(values.email, values.password);
-      navigate("/");
+      navigate(ROUTES.DASHBOARD);
     } catch {
       setError("Invalid email or password");
     }
